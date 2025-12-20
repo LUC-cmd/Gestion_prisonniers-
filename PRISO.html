@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGP - Système de Gestion Pénitentiaire</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #3c4b64;
+            --secondary-color: #e63946;
+            --accent-color: #457b9d;
+            --light-color: #f1faee;
+            --dark-color: #1d3557;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            height: calc(100vh - 56px);
+            position: sticky;
+            top: 56px;
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.8rem 1rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active {
+            color: white;
+            border-left-color: var(--secondary-color);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        
+        .card-dashboard {
+            transition: transform 0.2s;
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .card-dashboard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .stats-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .alert-critical {
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .badge-detention {
+            background-color: var(--accent-color);
+        }
+        
+        .badge-preventive {
+            background-color: #6c757d;
+        }
+        
+        .badge-condamnation {
+            background-color: var(--dark-color);
+        }
+        
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #2c3a52;
+            border-color: #2c3a52;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .page-title {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+        
+        .nav-icon-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .offline-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .risk-high {
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .risk-medium {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .risk-low {
+            border-left: 4px solid #198754;
+        }
+        
+        .quick-action-btn {
+            width: 100%;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        
+        .detainee-photo {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 3px solid var(--primary-color);
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent-color);
+            background-color: rgba(69, 123, 157, 0.05);
+        }
+        
+        .biography-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .biography-timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--accent-color);
+        }
+        
+        .timeline-event {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .timeline-event::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+        }
+        
+        .document-thumbnail {
+            width: 80px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .modal-xl-custom {
+            max-width: 1200px;
+        }
+        
+        .detainee-details-tabs .nav-link {
+            color: var(--dark-color);
+        }
+        
+        .detainee-details-tabs .nav-link.active {
+            font-weight: bold;
+            border-bottom: 3px solid var(--accent-color);
+        }
+        
+        .biometric-data {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                z-index: 100;
+                width: 250px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 99;
+            }
+            
+            .overlay.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation principale -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-shield-lock-fill me-2"></i>
+                SGP - Système de Gestion Pénitentiaire
+            </a>
+            <button class="navbar-toggler" type="button" id="sidebarToggle">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-house-door"></i> Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-people"></i> Détenus</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-building"></i> Établissements</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-clipboard-data"></i> Rapports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="bi bi-gear"></i> Administration</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <div class="dropdown me-2">
+                        <a href="#" class="nav-link dropdown-toggle text-white" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-translate me-1"></i> FR
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Français (FR)</a></li>
+                            <li><a class="dropdown-item" href="#">English (EN)</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown me-2">
+                        <a href="#" class="nav-link text-white position-relative" role="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-badge">3</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                            <li><h6 class="dropdown-header">Notifications</h6></li>
+                            <li><a class="dropdown-item" href="#">Nouvel incident signalé</a></li>
+                            <li><a class="dropdown-item" href="#">Visite médicale programmée</a></li>
+                            <li><a class="dropdown-item" href="#">Transfert de détenu confirmé</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#">Voir toutes les notifications</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <a href="#" class="nav-link dropdown-toggle text-white" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Mon profil</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Paramètres</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right me-2"></i> Déconnexion</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Overlay for mobile -->
+            <div class="overlay" id="overlay"></div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-2 col-md-3 d-md-block sidebar collapse p-0" id="sidebar">
+                <div class="d-flex flex-column p-3">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="me-2">
+                            <i class="bi bi-building fs-4 text-warning"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">MA de Paris-La Santé</div>
+                            <div class="small text-muted">Établissement: P123456</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-uppercase small text-muted mb-3">Actions rapides</h6>
+                        <button class="btn btn-sm btn-outline-light quick-action-btn" data-bs-toggle="modal" data-bs-target="#addDetaineeModal">
+                            <i class="bi bi-plus-circle me-2"></i>Nouveau détenu
+                        </button>
+                        <button class="btn btn-sm btn-outline-light quick-action-btn" data-bs-toggle="modal" data-bs-target="#incidentModal">
+                            <i class="bi bi-clipboard-plus me-2"></i>Signaler incident
+                        </button>
+                        <button class="btn btn-sm btn-outline-light quick-action-btn" data-bs-toggle="modal" data-bs-target="#visitModal">
+                            <i class="bi bi-calendar-event me-2"></i>Planifier visite
+                        </button>
+                    </div>
+
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active">
+                                <i class="bi bi-speedometer2"></i> Tableau de bord
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-person-badge"></i> Dossiers détenus
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-calendar-event"></i> Gestion des peines
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-clipboard-check"></i> Activités
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-activity"></i> Incidents
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-people"></i> Personnel
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-building"></i> Infrastructures
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-clipboard-data"></i> Statistiques
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-database"></i> Administration centrale
+                            </a>
+                        </li>
+                    </ul>
+                    <hr>
+                    <div class="text-center">
+                        <div class="text-muted small">SGP v2.1</div>
+                        <div class="text-muted smaller">Système sécurisé</div>
+                        <i class="bi bi-shield-check text-success"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenu principal -->
+            <main class="col-lg-10 col-md-9 ms-sm-auto px-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                    <h1 class="h2 page-title">Tableau de bord de l'établissement</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Aujourd'hui</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Semaine</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Mois</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary">
+                            <i class="bi bi-download"></i> Exporter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alertes et notifications -->
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong>Attention:</strong> 3 détenus doivent être transférés aujourd'hui.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- Cartes de statistiques -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-dashboard h-100">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-primary text-uppercase mb-1">Population totale</div>
+                                        <div class="stats-number">842</div>
+                                        <div class="mt-2 mb-0 text-muted text-sm">
+                                            <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 2.3%</span>
+                                            <span>depuis hier</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-people-fill fa-2x text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-dashboard h-100">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-success text-uppercase mb-1">Capacité</div>
+                                        <div class="stats-number">78%</div>
+                                        <div class="mt-2 mb-0 text-muted text-sm">
+                                            <span class="text-danger me-2"><i class="bi bi-exclamation-triangle"></i></span>
+                                            <span>Surpopulation secteur B</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-building fa-2x text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-dashboard h-100">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-info text-uppercase mb-1">Personnel présent</div>
+                                        <div class="stats-number">127/143</div>
+                                        <div class="mt-2 mb-0 text-muted text-sm">
+                                            <span class="text-danger me-2"><i class="bi bi-arrow-down"></i> 5%</span>
+                                            <span>absences maladie</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-person-check fa-2x text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card card-dashboard h-100">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-warning text-uppercase mb-1">Incidents ce mois</div>
+                                        <div class="stats-number">14</div>
+                                        <div class="mt-2 mb-0 text-muted text-sm">
+                                            <span class="text-success me-2"><i class="bi bi-arrow-down"></i> 22%</span>
+                                            <span>vs mois dernier</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-exclamation-triangle fa-2x text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Derniers détenus enregistrés -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-clock-history me-2"></i> Derniers détenus enregistrés
+                                </div>
+                                <div class="search-container">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Rechercher..." id="detaineeSearch">
+                                    <div class="search-results" id="searchResults"></div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Nom</th>
+                                                <th>Type</th>
+                                                <th>Arrivée</th>
+                                                <th>Quartier</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="risk-high">
+                                                <td>DUPONT, Jean</td>
+                                                <td><span class="badge bg-secondary badge-preventive">Préventive</span></td>
+                                                <td>12/05/2023</td>
+                                                <td>B2-14</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detaineeDetailModal">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="risk-medium">
+                                                <td>MARTIN, Pierre</td>
+                                                <td><span class="badge bg-primary badge-condamnation">Condamnation</span></td>
+                                                <td>11/05/2023</td>
+                                                <td>A3-07</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detaineeDetailModal">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="risk-low">
+                                                <td>BERNARD, Jacques</td>
+                                                <td><span class="badge bg-info badge-detention">Détention</span></td>
+                                                <td>11/05/2023</td>
+                                                <td>C1-22</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detaineeDetailModal">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="risk-medium">
+                                                <td>THOMAS, Michel</td>
+                                                <td><span class="badge bg-secondary badge-preventive">Préventive</span></td>
+                                                <td>10/05/2023</td>
+                                                <td>B2-09</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detaineeDetailModal">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="risk-high">
+                                                <td>PETIT, Daniel</td>
+                                                <td><span class="badge bg-primary badge-condamnation">Condamnation</span></td>
+                                                <td>10/05/2023</td>
+                                                <td>A1-18</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detaineeDetailModal">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer text-center">
+                                <a href="#" class="btn btn-sm btn-primary">Voir tous les détenus</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alertes et actions requises -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-exclamation-triangle me-2"></i> Alertes et actions requises
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="alertToggle" checked>
+                                    <label class="form-check-label small" for="alertToggle">Alertes actives</label>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="list-group list-group-flush">
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Visite médicale en attente</h6>
+                                            <small class="text-muted">Aujourd'hui</small>
+                                        </div>
+                                        <p class="mb-1">3 détenus nécessitent une visite médicale urgente</p>
+                                        <small class="text-muted">Secteurs A et B</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Libérations prévues</h6>
+                                            <small class="text-muted">Demain</small>
+                                        </div>
+                                        <p class="mb-1">5 détenus doivent être libérés demain</p>
+                                        <small class="text-muted">Préparer les dossiers</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action alert-critical">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1 text-danger">Incident nécessitant suivi</h6>
+                                            <small class="text-danger">Hier</small>
+                                        </div>
+                                        <p class="mb-1">Altercation en atelier menuiserie</p>
+                                        <small class="text-muted">Rapport à compléter</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Audit de sécurité</h6>
+                                            <small class="text-muted">Dans 3 jours</small>
+                                        </div>
+                                        <p class="mb-1">Audit programmé pour le secteur C</p>
+                                        <small class="text-muted">Préparer les documents</small>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-footer text-center">
+                                <a href="#" class="btn btn-sm btn-warning">Marquer comme lu</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Mouvements de population -->
+                    <div class="col-md-8 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <i class="bi bi-arrow-left-right me-2"></i> Mouvements de population (7 derniers jours)
+                            </div>
+                            <div class="card-body">
+                                <canvas id="populationChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Niveaux de sécurité -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                <i class="bi bi-shield-check me-2"></i> Répartition par niveau de sécurité
+                            </div>
+                            <div class="card-body">
+                                <canvas id="securityChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Planning du personnel -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <i class="bi bi-calendar-week me-2"></i> Planning du personnel - Aujourd'hui
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Poste</th>
+                                                <th>6h-12h</th>
+                                                <th>12h-18h</th>
+                                                <th>18h-00h</th>
+                                                <th>00h-6h</th>
+                                                <th>Statut</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Surveillant chef</td>
+                                                <td>Martin Dupont</td>
+                                                <td>Sophie Leroy</td>
+                                                <td>Pierre Moreau</td>
+                                                <td>Jean Petit</td>
+                                                <td><span class="badge bg-success">Complet</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Surveillant secteur A</td>
+                                                <td>2/3</td>
+                                                <td>3/3</td>
+                                                <td>2/3</td>
+                                                <td>2/3</td>
+                                                <td><span class="badge bg-warning">Partiel</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Surveillant secteur B</td>
+                                                <td>3/3</td>
+                                                <td>3/3</td>
+                                                <td>3/3</td>
+                                                <td>2/3</td>
+                                                <td><span class="badge bg-success">Complet</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Médical</td>
+                                                <td>1 médecin<br>2 infirmiers</td>
+                                                <td>1 infirmier</td>
+                                                <td>1 infirmier</td>
+                                                <td>1 infirmier</td>
+                                                <td><span class="badge bg-success">Complet</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Indicateur de mode hors ligne -->
+    <div class="offline-indicator alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-wifi-off me-2"></i> Mode hors ligne activé - Synchronisation différée
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Modal Ajouter un détenu -->
+    <div class="modal fade" id="addDetaineeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Nouveau détenu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDetaineeForm">
+                        <div class="row mb-4">
+                            <div class="col-md-4 text-center">
+                                <div class="upload-area" id="photoUploadArea">
+                                    <i class="bi bi-camera fs-1 text-muted"></i>
+                                    <p class="mt-2">Glisser-déposer une photo ou <span class="text-primary">cliquer pour importer</span></p>
+                                    <small class="text-muted">Formats: JPG, PNG (max. 2MB)</small>
+                                    <input type="file" id="photoInput" accept="image/*" class="d-none">
+                                </div>
+                                <div id="photoPreview" class="mt-3 text-center" style="display: none;">
+                                    <img src="" class="detainee-photo mb-2" id="previewImage">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="removePhoto">Supprimer</button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="lastName" class="form-label">Nom *</label>
+                                        <input type="text" class="form-control" id="lastName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="firstName" class="form-label">Prénom *</label>
+                                        <input type="text" class="form-control" id="firstName" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="birthDate" class="form-label">Date de naissance *</label>
+                                        <input type="date" class="form-control" id="birthDate" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="birthPlace" class="form-label">Lieu de naissance</label>
+                                        <input type="text" class="form-control" id="birthPlace">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="detentionType" class="form-label">Type de détention *</label>
+                                        <select class="form-select" id="detentionType" required>
+                                            <option value="">Sélectionner...</option>
+                                            <option value="preventive">Préventive</option>
+                                            <option value="condamnation">Condamnation</option>
+                                            <option value="extradition">Extradition</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalDate" class="form-label">Date d'arrivée *</label>
+                                        <input type="date" class="form-control" id="arrivalDate" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <ul class="nav nav-tabs mb-4" id="detaineeTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="identity-tab" data-bs-toggle="tab" data-bs-target="#identity" type="button" role="tab">Identité</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="judicial-tab" data-bs-toggle="tab" data-bs-target="#judicial" type="button" role="tab">Judiciaire</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="medical-tab" data-bs-toggle="tab" data-bs-target="#medical" type="button" role="tab">Médical</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">Documents</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="biometric-tab" data-bs-toggle="tab" data-bs-target="#biometric" type="button" role="tab">Biométrie</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="detaineeTabContent">
+                            <div class="tab-pane fade show active" id="identity" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nationality" class="form-label">Nationalité</label>
+                                        <input type="text" class="form-control" id="nationality">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="cin" class="form-label">N° CIN/Passeport</label>
+                                        <input type="text" class="form-control" id="cin">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Adresse</label>
+                                    <textarea class="form-control" id="address" rows="2"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Contacts familiaux</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm" id="contactsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nom</th>
+                                                    <th>Lien</th>
+                                                    <th>Téléphone</th>
+                                                    <th width="50"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><input type="text" class="form-control form-control-sm" placeholder="Nom"></td>
+                                                    <td><input type="text" class="form-control form-control-sm" placeholder="Lien familial"></td>
+                                                    <td><input type="text" class="form-control form-control-sm" placeholder="Téléphone"></td>
+                                                    <td><button type="button" class="btn btn-sm btn-success"><i class="bi bi-plus"></i></button></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="judicial" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="offenses" class="form-label">Infractions</label>
+                                    <textarea class="form-control" id="offenses" rows="2"></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sentence" class="form-label">Peine</label>
+                                        <input type="text" class="form-control" id="sentence">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sentenceDate" class="form-label">Date de jugement</label>
+                                        <input type="date" class="form-control" id="sentenceDate">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">Fin de peine prévue</label>
+                                        <input type="date" class="form-control" id="endDate">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="court" class="form-label">Tribunal</label>
+                                        <input type="text" class="form-control" id="court">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="medical" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="bloodType" class="form-label">Groupe sanguin</label>
+                                        <select class="form-select" id="bloodType">
+                                            <option value="">Sélectionner...</option>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="medicalStatus" class="form-label">État de santé</label>
+                                        <select class="form-select" id="medicalStatus">
+                                            <option value="">Sélectionner...</option>
+                                            <option value="good">Bon</option>
+                                            <option value="fair">Moyen</option>
+                                            <option value="poor">Mauvais</option>
+                                            <option value="critical">Critique</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="allergies" class="form-label">Allergies</label>
+                                    <textarea class="form-control" id="allergies" rows="2"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="treatments" class="form-label">Traitements en cours</label>
+                                    <textarea class="form-control" id="treatments" rows="2"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="medicalHistory" class="form-label">Antécédents médicaux</label>
+                                    <textarea class="form-control" id="medicalHistory" rows="3"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="documents" role="tabpanel">
+                                <div class="upload-area mb-3" id="documentUploadArea">
+                                    <i class="bi bi-file-earmark-arrow-up fs-1 text-muted"></i>
+                                    <p class="mt-2">Glisser-déposer des documents ou <span class="text-primary">cliquer pour importer</span></p>
+                                    <small class="text-muted">Formats: PDF, JPG, PNG (max. 5MB par fichier)</small>
+                                    <input type="file" id="documentInput" multiple class="d-none">
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm" id="documentsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Document</th>
+                                                <th>Type</th>
+                                                <th>Taille</th>
+                                                <th>Date</th>
+                                                <th width="50"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Documents will be added here dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="biometric" role="tabpanel">
+                                <div class="biometric-data">
+                                    <h6 class="mb-3">Données biométriques</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Empreintes digitales</label>
+                                            <div class="d-flex justify-content-between">
+                                                <button class="btn btn-outline-primary btn-sm">Main droite</button>
+                                                <button class="btn btn-outline-primary btn-sm">Main gauche</button>
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                <small class="text-muted">Status: <span class="text-danger">Non enregistrées</span></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Reconnaissance faciale</label>
+                                            <div class="text-center">
+                                                <button class="btn btn-outline-primary btn-sm" id="captureFace">Capturer</button>
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                <small class="text-muted">Status: <span class="text-danger">Non capturée</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Signes distinctifs</label>
+                                            <textarea class="form-control" rows="3" placeholder="Cicatrices, tatouages, etc."></textarea>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Particularités physiques</label>
+                                            <textarea class="form-control" rows="3" placeholder="Handicaps, particularités, etc."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="saveDetainee">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Détails détenu -->
+    <div class="modal fade" id="detaineeDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl-custom">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Dossier détenu: DUPONT Jean</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center">
+                            <img src="https://via.placeholder.com/150" class="detainee-photo mb-3">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-primary">Modifier la photo</button>
+                                <button class="btn btn-sm btn-outline-secondary">Imprimer le dossier</button>
+                                <button class="btn btn-sm btn-outline-info">Historique complet</button>
+                            </div>
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6>Informations rapides</h6>
+                                <div class="small">
+                                    <div><strong>ID:</strong> D-7842</div>
+                                    <div><strong>Âge:</strong> 42 ans</div>
+                                    <div><strong>Statut:</strong> <span class="badge bg-danger">Haut risque</span></div>
+                                    <div><strong>Dernière visite médicale:</strong> 15/05/2023</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <ul class="nav nav-tabs detainee-details-tabs" id="detaineeDetailsTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Profil</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="judicial-tab2" data-bs-toggle="tab" data-bs-target="#judicial2" type="button" role="tab">Judiciaire</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="movements-tab" data-bs-toggle="tab" data-bs-target="#movements" type="button" role="tab">Mouvements</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="medical-tab2" data-bs-toggle="tab" data-bs-target="#medical2" type="button" role="tab">Médical</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab">Activités</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="documents-tab2" data-bs-toggle="tab" data-bs-target="#documents2" type="button" role="tab">Documents</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="biometric-tab2" data-bs-toggle="tab" data-bs-target="#biometric2" type="button" role="tab">Biométrie</button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content p-3 border-start border-end border-bottom" id="detaineeDetailsTabContent">
+                                <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>État civil</h6>
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="140">Nom complet:</th>
+                                                    <td>DUPONT Jean Michel</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Date naissance:</th>
+                                                    <td>12/08/1980</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Lieu naissance:</th>
+                                                    <td>Marseille, France</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Nationalité:</th>
+                                                    <td>Française</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Situation familiale:</th>
+                                                    <td>Célibataire</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Détention</h6>
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="140">Type:</th>
+                                                    <td><span class="badge bg-secondary">Préventive</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Date arrivée:</th>
+                                                    <td>12/05/2023</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Quartier/Cellule:</th>
+                                                    <td>B2-14</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Niveau sécurité:</th>
+                                                    <td><span class="badge bg-danger">Élevé</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Détenu précédent:</th>
+                                                    <td>MARTIN Louis (transfert)</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <h6 class="mt-4">Contacts familiaux</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nom</th>
+                                                    <th>Lien</th>
+                                                    <th>Téléphone</th>
+                                                    <th>Dernière visite</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>DUPONT Marie</td>
+                                                    <td>Mère</td>
+                                                    <td>06 12 34 56 78</td>
+                                                    <td>20/05/2023</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>DUPONT Eric</td>
+                                                    <td>Frère</td>
+                                                    <td>06 98 76 54 32</td>
+                                                    <td>18/05/2023</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="judicial2" role="tabpanel">
+                                    <h6>Infractions et peines</h6>
+                                    <div class="mb-3">
+                                        <span class="badge bg-dark me-2">Vol avec violence</span>
+                                        <span class="badge bg-dark me-2">Recel</span>
+                                        <span class="badge bg-dark">Evasion tentée</span>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="140">Tribunal:</th>
+                                                    <td>TGI de Paris</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Juge:</th>
+                                                    <td>Lefebvre Michel</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Avocat:</th>
+                                                    <td>Dubois Sophie</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="140">Date jugement:</th>
+                                                    <td>10/05/2023</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Peine:</th>
+                                                    <td>5 années</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Fin prévue:</th>
+                                                    <td>10/05/2028</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <h6 class="mt-4">Calendrier des audiences</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Heure</th>
+                                                    <th>Type</th>
+                                                    <th>Chambre</th>
+                                                    <th>Statut</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>25/05/2023</td>
+                                                    <td>10:30</td>
+                                                    <td>Appel</td>
+                                                    <td>Chambre 4</td>
+                                                    <td><span class="badge bg-warning">Planifiée</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>12/05/2023</td>
+                                                    <td>14:00</td>
+                                                    <td>Jugement</td>
+                                                    <td>Chambre 2</td>
+                                                    <td><span class="badge bg-success">Terminée</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="movements" role="tabpanel">
+                                    <h6>Historique des placements</h6>
+                                    <div class="biography-timeline">
+                                        <div class="timeline-event">
+                                            <div class="d-flex justify-content-between">
+                                                <h6 class="mb-1">Transfert vers quartier B2</h6>
+                                                <small class="text-muted">12/05/2023</small>
+                                            </div>
+                                            <p class="mb-1">Cellule: B2-14 • Motif: Affectation initiale</p>
+                                            <small>Surveillant: Martin Dupont</small>
+                                        </div>
+                                        <div class="timeline-event">
+                                            <div class="d-flex justify-content-between">
+                                                <h6 class="mb-1">Admission établissement</h6>
+                                                <small class="text-muted">12/05/2023</small>
+                                            </div>
+                                            <p class="mb-1">Quarantaine secteur D • Procédure standard</p>
+                                            <small>Médecin: Dr. Leroy</small>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mt-4">Permissions de sortie</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date demande</th>
+                                                    <th>Type</th>
+                                                    <th>Durée</th>
+                                                    <th>Motif</th>
+                                                    <th>Statut</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>15/05/2023</td>
+                                                    <td>Sortie funérailles</td>
+                                                    <td>4 heures</td>
+                                                    <td>Décès de la grand-mère</td>
+                                                    <td><span class="badge bg-danger">Refusée</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="medical2" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Fiche médicale</h6>
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="140">Groupe sanguin:</th>
+                                                    <td>O+</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>État général:</th>
+                                                    <td><span class="badge bg-success">Bon</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Allergies:</th>
+                                                    <td>Aucune connue</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Traitements:</th>
+                                                    <td>Aucun</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Dernière visite:</th>
+                                                    <td>15/05/2023</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Prochaines consultations</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>Type</th>
+                                                            <th>Médecin</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>30/05/2023</td>
+                                                            <td>Contrôle général</td>
+                                                            <td>Dr. Leroy</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>15/06/2023</td>
+                                                            <td>Suivi psychologique</td>
+                                                            <td>Dr. Martin</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h6 class="mt-4">Historique médical</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Motif</th>
+                                                    <th>Diagnostic</th>
+                                                    <th>Médecin</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>15/05/2023</td>
+                                                    <td>Visite d'admission</td>
+                                                    <td>Aptitude confirmée</td>
+                                                    <td>Dr. Leroy</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="activities" role="tabpanel">
+                                    <h6>Activités et formations</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-info text-white py-2">
+                                                    <i class="bi bi-briefcase me-2"></i> Travail
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Atelier:</strong> Menuiserie</p>
+                                                    <p class="mb-1"><strong>Horaire:</strong> 9h-12h / 14h-17h</p>
+                                                    <p class="mb-0"><strong>Superviseur:</strong> Thomas Bernard</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-success text-white py-2">
+                                                    <i class="bi bi-book me-2"></i> Formation
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Programme:</strong> Alphabétisation</p>
+                                                    <p class="mb-1"><strong>Horaire:</strong> Lundi/Mercredi 10h-11h30</p>
+                                                    <p class="mb-0"><strong>Formateur:</strong> Sophie Petit</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h6 class="mt-4">Participations aux activités</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Activité</th>
+                                                    <th>Évaluation</th>
+                                                    <th>Commentaire</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>18/05/2023</td>
+                                                    <td>Atelier menuiserie</td>
+                                                    <td><span class="badge bg-success">Positive</span></td>
+                                                    <td>Application et sérieux</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>16/05/2023</td>
+                                                    <td>Cours alphabétisation</td>
+                                                    <td><span class="badge bg-warning">Moyenne</span></td>
+                                                    <td>Difficultés de concentration</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="documents2" role="tabpanel">
+                                    <div class="upload-area mb-3">
+                                        <i class="bi bi-file-earmark-arrow-up fs-1 text-muted"></i>
+                                        <p class="mt-2">Glisser-déposer des documents ou <span class="text-primary">cliquer pour importer</span></p>
+                                        <small class="text-muted">Formats: PDF, JPG, PNG (max. 5MB par fichier)</small>
+                                    </div>
+                                    <h6>Documents associés</h6>
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3 text-center">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
+                                                    <h6 class="mt-2">Jugement.pdf</h6>
+                                                    <p class="small text-muted">512 KB • 12/05/2023</p>
+                                                    <button class="btn btn-sm btn-outline-primary">Ouvrir</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3 text-center">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <i class="bi bi-file-earmark-text fs-1 text-primary"></i>
+                                                    <h6 class="mt-2">Fiche_medicale.doc</h6>
+                                                    <p class="small text-muted">256 KB • 15/05/2023</p>
+                                                    <button class="btn btn-sm btn-outline-primary">Ouvrir</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3 text-center">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <img src="https://via.placeholder.com/80x100" class="document-thumbnail">
+                                                    <h6 class="mt-2">Photo_identite.jpg</h6>
+                                                    <p class="small text-muted">128 KB • 12/05/2023</p>
+                                                    <button class="btn btn-sm btn-outline-primary">Ouvrir</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3 text-center">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
+                                                    <h6 class="mt-2">Casier_judiciaire.pdf</h6>
+                                                    <p class="small text-muted">342 KB • 10/05/2023</p>
+                                                    <button class="btn btn-sm btn-outline-primary">Ouvrir</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="biometric2" role="tabpanel">
+                                    <div class="biometric-data">
+                                        <h6 class="mb-3">Données biométriques</h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Empreintes digitales</label>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="badge bg-success">Main droite</span>
+                                                    <span class="badge bg-success">Main gauche</span>
+                                                </div>
+                                                <div class="text-center">
+                                                    <small class="text-muted">Status: <span class="text-success">Enregistrées</span> • 12/05/2023</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Reconnaissance faciale</label>
+                                                <div class="text-center mb-2">
+                                                    <span class="badge bg-success">Modèle enregistré</span>
+                                                </div>
+                                                <div class="text-center">
+                                                    <small class="text-muted">Status: <span class="text-success">Capturée</span> • 12/05/2023</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Signes distinctifs</label>
+                                                <div class="bg-white p-2 rounded border">
+                                                    <ul>
+                                                        <li>Cicatrice sourcil droit (3cm)</li>
+                                                        <li>Tatouage bras gauche "Liberté"</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Particularités physiques</label>
+                                                <div class="bg-white p-2 rounded border">
+                                                    <ul>
+                                                        <li>Boitement légér pied droit</li>
+                                                        <li>Allergie pénicilline</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn btn-primary">Modifier le dossier</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Signaler incident -->
+    <div class="modal fade" id="incidentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Signaler un incident</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type d'incident *</label>
+                                <select class="form-select" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option>Altercation entre détenus</option>
+                                    <option>Évasion tentée</option>
+                                    <option>Violence envers le personnel</option>
+                                    <option>Dégradation de matériel</option>
+                                    <option>Autre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date et heure *</label>
+                                <input type="datetime-local" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Lieu *</label>
+                            <input type="text" class="form-control" placeholder="Quartier, cellule, atelier..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Détenu(s) impliqué(s)</label>
+                            <select class="form-select" multiple>
+                                <option>DUPONT Jean (D-7842)</option>
+                                <option>MARTIN Pierre (D-7841)</option>
+                                <option>BERNARD Jacques (D-7839)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description détaillée *</label>
+                            <textarea class="form-control" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Personnel témoin</label>
+                            <input type="text" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Gravité</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="severity" id="severityLow" value="low">
+                                    <label class="form-check-label" for="severityLow">Faible</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="severity" id="severityMedium" value="medium" checked>
+                                    <label class="form-check-label" for="severityMedium">Moyenne</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="severity" id="severityHigh" value="high">
+                                    <label class="form-check-label" for="severityHigh">Élevée</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Pièces jointes</label>
+                            <input type="file" class="form-control" multiple>
+                            <div class="form-text">Photos, vidéos ou documents relatifs à l'incident</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger">Signaler l'incident</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Planifier visite -->
+    <div class="modal fade" id="visitModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="bi bi-calendar-event me-2"></i>Planifier une visite</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Détenu *</label>
+                            <select class="form-select" required>
+                                <option value="">Sélectionner un détenu...</option>
+                                <option>DUPONT Jean (D-7842)</option>
+                                <option>MARTIN Pierre (D-7841)</option>
+                                <option>BERNARD Jacques (D-7839)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Visiteur *</label>
+                            <select class="form-select" required>
+                                <option value="">Sélectionner un visiteur...</option>
+                                <option>DUPONT Marie (Mère)</option>
+                                <option>DUPONT Eric (Frère)</option>
+                                <option>MARTIN Sophie (Épouse)</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date *</label>
+                                <input type="date" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Heure *</label>
+                                <input type="time" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type de visite</label>
+                            <select class="form-select">
+                                <option>Visite classique</option>
+                                <option>Visite longue durée</option>
+                                <option>Visite conjugale</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Durée (minutes)</label>
+                            <input type="number" class="form-control" value="30" min="15" max="120">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="reminderCheck">
+                            <label class="form-check-label" for="reminderCheck">Envoyer un rappel par SMS</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-info">Planifier la visite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Graphique des mouvements de population
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('populationChart').getContext('2d');
+            const populationChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                    datasets: [
+                        {
+                            label: 'Entrées',
+                            backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                            borderColor: 'rgala(40, 167, 69, 1)',
+                            data: [12, 19, 8, 15, 10, 5, 3]
+                        },
+                        {
+                            label: 'Sorties',
+                            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                            borderColor: 'rgala(220, 53, 69, 1)',
+                            data: [8, 12, 6, 9, 14, 7, 4]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Mouvements de population hebdomadaires'
+                        }
+                    }
+                }
+            });
+            
+            // Graphique des niveaux de sécurité
+            const securityCtx = document.getElementById('securityChart').getContext('2d');
+            const securityChart = new Chart(securityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Haute sécurité', 'Sécurité renforcée', 'Détention normale', 'Semi-liberté'],
+                    datasets: [{
+                        data: [120, 245, 390, 87],
+                        backgroundColor: [
+                            'rgala(220, 53, 69, 0.8)',
+                            'rgala(255, 193, 7, 0.8)',
+                            'rgala(25, 135, 84, 0.8)',
+                            'rgala(13, 110, 253, 0.8)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+            
+            // Simulation de la détection du mode hors ligne
+            setTimeout(function() {
+                document.querySelector('.offline-indicator').style.display = 'block';
+            }, 3000);
+            
+            // Gestion de la sidebar en mode mobile
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            });
+            
+            // Gestion de l'upload de photo
+            const photoUploadArea = document.getElementById('photoUploadArea');
+            const photoInput = document.getElementById('photoInput');
+            const photoPreview = document.getElementById('photoPreview');
+            const previewImage = document.getElementById('previewImage');
+            const removePhoto = document.getElementById('removePhoto');
+            
+            photoUploadArea.addEventListener('click', function() {
+                photoInput.click();
+            });
+            
+            photoUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                photoUploadArea.classList.add('dragover');
+            });
+            
+            photoUploadArea.addEventListener('dragleave', function() {
+                photoUploadArea.classList.remove('dragover');
+            });
+            
+            photoUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                photoUploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handleImageUpload(e.dataTransfer.files[0]);
+                }
+            });
+            
+            photoInput.addEventListener('change', function() {
+                if (photoInput.files.length) {
+                    handleImageUpload(photoInput.files[0]);
+                }
+            });
+            
+            removePhoto.addEventListener('click', function(e) {
+                e.stopPropagation();
+                photoPreview.style.display = 'none';
+                photoUploadArea.style.display = 'block';
+                photoInput.value = '';
+            });
+            
+            function handleImageUpload(file) {
+                if (file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        photoPreview.style.display = 'block';
+                        photoUploadArea.style.display = 'none';
+                    };
+                    
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('Veuillez sélectionner une image valide (JPG, PNG)');
+                }
+            }
+            
+            // Gestion de l'upload de documents
+            const documentUploadArea = document.getElementById('documentUploadArea');
+            const documentInput = document.getElementById('documentInput');
+            const documentsTable = document.getElementById('documentsTable').getElementsByTagName('tbody')[0];
+            
+            documentUploadArea.addEventListener('click', function() {
+                documentInput.click();
+            });
+            
+            documentUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                documentUploadArea.classList.add('dragover');
+            });
+            
+            documentUploadArea.addEventListener('dragleave', function() {
+                documentUploadArea.classList.remove('dragover');
+            });
+            
+            documentUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                documentUploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handleDocumentUpload(e.dataTransfer.files);
+                }
+            });
+            
+            documentInput.addEventListener('change', function() {
+                if (documentInput.files.length) {
+                    handleDocumentUpload(documentInput.files);
+                }
+            });
+            
+            function handleDocumentUpload(files) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const row = documentsTable.insertRow();
+                    
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    const cell3 = row.insertCell(2);
+                    const cell4 = row.insertCell(3);
+                    const cell5 = row.insertCell(4);
+                    
+                    // Simplification pour la démo - en réalité il faudrait gérer l'upload
+                    cell1.innerHTML = file.name;
+                    cell2.innerHTML = file.type || 'Inconnu';
+                    cell3.innerHTML = Math.round(file.size / 1024) + ' KB';
+                    cell4.innerHTML = new Date().toLocaleDateString();
+                    cell5.innerHTML = '<button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>';
+                    
+                    // Réinitialiser l'input
+                    documentInput.value = '';
+                }
+            }
+            
+            // Simulation de sauvegarde
+            document.getElementById('saveDetainee').addEventListener('click', function() {
+                alert('Détenu enregistré avec succès! (simulation)');
+                document.getElementById('addDetaineeModal').querySelector('.btn-close').click();
+            });
+            
+            // Recherche de détenus
+            const detaineeSearch = document.getElementById('detaineeSearch');
+            const searchResults = document.getElementById('searchResults');
+            
+            detaineeSearch.addEventListener('focus', function() {
+                searchResults.style.display = 'block';
+                searchResults.innerHTML = `
+                    <div class="p-2 border-bottom">DUPONT Jean (D-7842) - Quartier B2-14</div>
+                    <div class="p-2 border-bottom">MARTIN Pierre (D-7841) - Quartier A3-07</div>
+                    <div class="p-2">BERNARD Jacques (D-7839) - Quartier C1-22</div>
+                `;
+            });
+            
+            detaineeSearch.addEventListener('blur', function() {
+                setTimeout(() => {
+                    searchResults.style.display = 'none';
+                }, 200);
+            });
+            
+            // Capture faciale simulée
+            document.getElementById('captureFace').addEventListener('click', function() {
+                if (confirm("Déclencher la capture faciale? Assurez-vous que le détenu est correctement positionné.")) {
+                    setTimeout(() => {
+                        alert("Capture faciale réussie! Données biométriques enregistrées.");
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

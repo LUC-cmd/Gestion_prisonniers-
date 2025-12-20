@@ -1,0 +1,27 @@
+.App {
+  text-align: center;
+}
+
+.card-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 40px 25px;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.profile-img-card {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 10px;
+  display: block;
+  -moz-border-radius: 50%;
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.form-group label {
+  text-align: left;
+  display: block;
+}
