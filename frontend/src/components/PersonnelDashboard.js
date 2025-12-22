@@ -1,32 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Card, Button, Table, Spinner, Alert, Badge } from 'react-bootstrap';
+import { Row, Col, Button, Spinner, Alert } from 'react-bootstrap';
+import { Users, PlusCircle, AlertTriangle, Calendar, Eye, Activity, Building2 } from 'lucide-react';
 import DetaineeService from '../services/detainee.service';
 import AuthService from '../services/auth.service';
 import DetaineeDetailModal from './DetaineeDetailModal';
-import IncidentModal from './IncidentModal'; // Import the new modal
+import IncidentModal from './IncidentModal';
 
-// Placeholder for VisitModal
-const VisitModal = ({ show, handleClose }) => (
-    <div className={`modal ${show ? 'd-block' : 'd-none'}`} tabIndex="-1">
-        <div className="modal-dialog">
-            <div className="modal-content">
-                <div className="modal-header">
-                    <h5 className="modal-title">Planifier une Visite</h5>
-                    <button type="button" className="btn-close" onClick={handleClose}></button>
-                </div>
-                <div className="modal-body">
-                    <p>Le formulaire pour planifier une visite sera implémenté ici.</p>
-                </div>
-                <div className="modal-footer">
-                    <Button variant="secondary" onClick={handleClose}>Fermer</Button>
-                    <Button variant="primary">Planifier</Button>
-                </div>
-            </div>
+const StatCard = ({ title, value, icon, color, trend }) => (
+    <div className="glass-card stat-card h-100">
+        <div className="stat-info">
+            <h3>{title}</h3>
+            <div className="stat-value">{value}</div>
+            {trend && <div className="small mt-2 text-success">{trend}</div>}
+        </div>
+        <div className="stat-icon" style={{ backgroundColor: `${color}20`, color: color }}>
+            {icon}
         </div>
     </div>
 );
-
 
 const PersonnelDashboard = () => {
     const navigate = useNavigate();
@@ -35,8 +27,6 @@ const PersonnelDashboard = () => {
     const [error, setError] = useState('');
     const [showIncidentModal, setShowIncidentModal] = useState(false);
     const [showVisitModal, setShowVisitModal] = useState(false);
-
-    // State for the detail modal
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedDetainee, setSelectedDetainee] = useState(null);
 
@@ -47,158 +37,127 @@ const PersonnelDashboard = () => {
             setDetainees(response.data);
             setError('');
         } catch (err) {
-            if (err.response && err.response.status === 401) {
-              // The API interceptor will handle the redirect, do not set local error
-              console.log("Intercepted 401 on PersonnelDashboard, letting the interceptor handle it.");
-            } else {
-                const resMessage =
-                    (err.response &&
-                        err.response.data &&
-                        err.response.data.message) ||
-                    err.message ||
-                    err.toString();
-                setError(resMessage);
-            }
+            const resMessage = (err.response?.data?.message) || err.message || 'Une erreur est survenue.';
+            setError(resMessage);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        const currentUser = AuthService.getCurrentUser();
-        if (!currentUser) {
-            setError("Veuillez vous connecter pour voir ce contenu.");
-            setLoading(false);
-            return;
-        }
         fetchDetainees();
     }, []);
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'PENDING_VALIDATION': return <Badge bg="warning">En attente</Badge>;
-            case 'VALIDATED': return <Badge bg="success">Validé</Badge>;
-            case 'REJECTED': return <Badge bg="danger">Rejeté</Badge>;
-            default: return <Badge bg="secondary">{status}</Badge>;
-        }
-    };
-    
-    // Handlers for the detail modal
-    const handleShowDetailModal = (detainee) => {
-        setSelectedDetainee(detainee);
-        setShowDetailModal(true);
-    };
-
-    const handleCloseDetailModal = () => {
-        setShowDetailModal(false);
-        setSelectedDetainee(null);
-    };
-
-    const handleIncidentReported = () => {
-        // This function can be used to refresh data, e.g., an incident list
-        console.log("Incident reported, refresh data here in the future.");
-    };
+    if (loading) return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /><p className="mt-2">Chargement de l'espace personnel...</p></div>;
 
     return (
-        <div className="container-fluid mt-3">
-            <h1 className="h2 page-title">Tableau de bord du Personnel</h1>
-            
-            {/* Quick Actions */}
+        <div className="animate-fade-in">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 className="fw-bold text-primary mb-1">Espace Personnel de Surveillance</h2>
+                    <p className="text-muted small">Gestion quotidienne des détenus et incidents</p>
+                </div>
+                <div className="d-flex gap-2">
+                    <Button className="btn-premium btn-premium-primary" onClick={() => navigate('/detenus/nouveau')}>
+                        <PlusCircle size={18} /> Nouveau Détenu
+                    </Button>
+                </div>
+            </div>
+
+            {error && <Alert variant="danger" className="border-0 shadow-sm">{error}</Alert>}
+
             <Row className="mb-4">
-                <Col md={4}>
-                    <h4>Actions Rapides</h4>
-                    <Button variant="primary" className="me-2 mb-2 w-100 text-start" onClick={() => navigate('/detainee-form')}>
-                        <i className="bi bi-plus-circle me-2"></i>Nouveau Détenu
-                    </Button>
-                    <Button variant="outline-danger" className="me-2 mb-2 w-100 text-start" onClick={() => setShowIncidentModal(true)}>
-                        <i className="bi bi-clipboard-plus me-2"></i>Signaler un Incident
-                    </Button>
-                    <Button variant="outline-info" className="mb-2 w-100 text-start" onClick={() => setShowVisitModal(true)}>
-                        <i className="bi bi-calendar-event me-2"></i>Planifier une Visite
-                    </Button>
+                <Col xl={3} md={6} className="mb-3">
+                    <StatCard title="Population Totale" value={detainees.length} icon={<Users size={24} />} color="#3c4b64" trend="+2" />
+                </Col>
+                <Col xl={3} md={6} className="mb-3">
+                    <StatCard title="Capacité Secteur" value="78%" icon={<Building2 size={24} />} color="#2ecc71" />
+                </Col>
+                <Col xl={3} md={6} className="mb-3">
+                    <StatCard title="Incidents Récents" value="3" icon={<AlertTriangle size={24} />} color="#e63946" />
+                </Col>
+                <Col xl={3} md={6} className="mb-3">
+                    <StatCard title="Visites Prévues" value="12" icon={<Calendar size={24} />} color="#3498db" />
                 </Col>
             </Row>
 
-            {/* Stats Cards */}
             <Row className="mb-4">
-                <Col xl={3} md={6}>
-                    <Card>
-                        <Card.Body>
-                            <div className="text-xs fw-bold text-primary text-uppercase mb-1">Population Totale</div>
-                            <div className="stats-number">{loading ? <Spinner as="span" size="sm" /> : detainees.length}</div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col xl={3} md={6}>
-                    <Card>
-                        <Card.Body>
-                            <div className="text-xs fw-bold text-success text-uppercase mb-1">Capacité</div>
-                            <div className="stats-number">{loading ? <Spinner as="span" size="sm" /> : "N/A"}%</div>
-                             <small className="text-muted">Donnée non disponible</small>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Detainee List */}
-            <Row>
-                <Col>
-                    <Card>
-                        <Card.Header>Derniers détenus enregistrés</Card.Header>
-                        <Card.Body>
-                            {error && <Alert variant="danger">{error}</Alert>}
-                            {loading ? (
-                                <div className="text-center">
-                                    <Spinner animation="border" role="status">
-                                        <span className="visually-hidden">Chargement...</span>
-                                    </Spinner>
+                <Col lg={4}>
+                    <div className="glass-card p-4 h-100">
+                        <h5 className="fw-bold mb-4">Actions de Terrain</h5>
+                        <div className="d-grid gap-3">
+                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3" onClick={() => setShowIncidentModal(true)}>
+                                <div className="bg-danger text-white p-2 rounded-3"><AlertTriangle size={20} /></div>
+                                <div>
+                                    <div className="fw-bold">Signaler un Incident</div>
+                                    <div className="text-muted small">Rapport immédiat d'événement</div>
                                 </div>
-                            ) : (
-                                <Table striped bordered hover responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>Nom</th>
-                                            <th>Prénom</th>
-                                            <th>Date d'arrivée</th>
-                                            <th>Type de détention</th>
-                                            <th>Statut</th>
-                                            <th>Actions</th>
+                            </Button>
+                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3">
+                                <div className="bg-info text-white p-2 rounded-3"><Calendar size={20} /></div>
+                                <div>
+                                    <div className="fw-bold">Planifier une Visite</div>
+                                    <div className="text-muted small">Gestion des parloirs</div>
+                                </div>
+                            </Button>
+                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3">
+                                <div className="bg-primary text-white p-2 rounded-3"><Activity size={20} /></div>
+                                <div>
+                                    <div className="fw-bold">Rapport de Ronde</div>
+                                    <div className="text-muted small">Validation des secteurs</div>
+                                </div>
+                            </Button>
+                        </div>
+                    </div>
+                </Col>
+                <Col lg={8}>
+                    <div className="glass-card p-4 h-100">
+                        <h5 className="fw-bold mb-4">Derniers Détenus Enregistrés</h5>
+                        <div className="custom-table-container">
+                            <table className="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Arrivée</th>
+                                        <th>Type</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {detainees.slice(0, 5).map(detainee => (
+                                        <tr key={detainee.id}>
+                                            <td className="fw-bold">{detainee.lastName} {detainee.firstName}</td>
+                                            <td>{new Date(detainee.arrivalDate).toLocaleDateString()}</td>
+                                            <td><span className="small text-muted">{detainee.detentionType}</span></td>
+                                            <td>
+                                                <span className={`badge-custom ${detainee.status === 'VALIDATED' ? 'badge-success' : 'badge-warning'}`}>
+                                                    {detainee.status === 'VALIDATED' ? 'Validé' : 'En attente'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <Button variant="light" size="sm" className="rounded-pill" onClick={() => { setSelectedDetainee(detainee); setShowDetailModal(true); }}>
+                                                    <Eye size={14} />
+                                                </Button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {detainees.slice(0, 10).map(detainee => ( // Show first 10 for now
-                                            <tr key={detainee.id}>
-                                                <td>{detainee.lastName}</td>
-                                                <td>{detainee.firstName}</td>
-                                                <td>{new Date(detainee.arrivalDate).toLocaleDateString()}</td>
-                                                <td>{detainee.detentionType}</td>
-                                                <td>{getStatusBadge(detainee.status)}</td>
-                                                <td>
-                                                    <Button variant="outline-primary" size="sm" onClick={() => handleShowDetailModal(detainee)}>
-                                                        <i className="bi bi-eye"></i> Voir
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                            )}
-                        </Card.Body>
-                    </Card>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </Col>
             </Row>
 
-            {/* Modals */}
-            <IncidentModal 
-                show={showIncidentModal} 
-                handleClose={() => setShowIncidentModal(false)} 
-                onIncidentReported={handleIncidentReported}
+            <IncidentModal
+                show={showIncidentModal}
+                handleClose={() => setShowIncidentModal(false)}
+                onIncidentReported={() => fetchDetainees()}
             />
-            <VisitModal show={showVisitModal} handleClose={() => setShowVisitModal(false)} />
-            <DetaineeDetailModal 
-                show={showDetailModal} 
-                handleClose={handleCloseDetailModal} 
-                detainee={selectedDetainee} 
+            <DetaineeDetailModal
+                show={showDetailModal}
+                handleClose={() => setShowDetailModal(false)}
+                detainee={selectedDetainee}
             />
         </div>
     );

@@ -1,15 +1,18 @@
-import api from './api';
-
-const API_URL = '/files/'; // The base URL is in api.js
+// Simulation mode - No backend required
 
 const uploadFile = (file, onUploadProgress) => {
-    let formData = new FormData();
-    formData.append("file", file);
-
-    return api.post(API_URL + 'upload', formData, {
-        // The 'Content-Type' header will be set automatically by the browser
-        // because we are sending FormData. The auth header is handled by the interceptor.
-        onUploadProgress,
+    return new Promise((resolve) => {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            if (onUploadProgress) {
+                onUploadProgress({ loaded: progress, total: 100 });
+            }
+            if (progress >= 100) {
+                clearInterval(interval);
+                resolve({ data: { message: "Fichier téléchargé avec succès !", fileName: file.name } });
+            }
+        }, 100);
     });
 };
 

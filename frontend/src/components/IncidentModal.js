@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Row, Col, Alert } from 'react-bootstrap';
+import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import IncidentService from '../services/incident.service';
 import DetaineeService from '../services/detainee.service';
 
@@ -49,7 +49,7 @@ const IncidentModal = ({ show, handleClose, onIncidentReported }) => {
         try {
             await IncidentService.createIncident(incidentData);
             setSuccess('Incident signalé avec succès !');
-            if(onIncidentReported) onIncidentReported();
+            if (onIncidentReported) onIncidentReported();
             setTimeout(() => {
                 handleClose();
                 setSuccess('');
@@ -71,7 +71,7 @@ const IncidentModal = ({ show, handleClose, onIncidentReported }) => {
                 <Modal.Body>
                     {error && <Alert variant="danger">{error}</Alert>}
                     {success && <Alert variant="success">{success}</Alert>}
-                    
+
                     <Row>
                         <Col md={6} className="mb-3">
                             <Form.Label>Type d'incident *</Form.Label>

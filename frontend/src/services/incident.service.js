@@ -1,13 +1,33 @@
-import api from './api';
+// Simulation mode - No backend required
+const MOCK_INCIDENTS_KEY = 'mock_incidents';
 
-const API_URL = '/incidents/'; // The base URL is in api.js
+const getMockIncidents = () => {
+    const incidents = localStorage.getItem(MOCK_INCIDENTS_KEY);
+    return incidents ? JSON.parse(incidents) : [];
+};
 
 const getIncidents = () => {
-    return api.get(API_URL);
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({ data: getMockIncidents() });
+        }, 500);
+    });
 };
 
 const createIncident = (incidentData) => {
-    return api.post(API_URL, incidentData);
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const incidents = getMockIncidents();
+            const newIncident = {
+                ...incidentData,
+                id: incidents.length + 1,
+                createdAt: new Date().toISOString()
+            };
+            incidents.push(newIncident);
+            localStorage.setItem(MOCK_INCIDENTS_KEY, JSON.stringify(incidents));
+            resolve({ data: newIncident });
+        }, 800);
+    });
 };
 
 const IncidentService = {
