@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import UserService from '../services/user.service';
-import AuthService from '../services/auth.service';
 import DetaineeService from '../services/detainee.service';
 import DetaineeDetailModal from './DetaineeDetailModal';
-import { Table, Button, Form, Alert, Badge, Spinner, Modal, Card, Col, Row, Tabs, Tab } from 'react-bootstrap';
+import { Button, Form, Alert, Spinner, Modal, Col, Row, Tabs, Tab } from 'react-bootstrap';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import { Users, UserCheck, ShieldAlert, Activity, Eye, CheckCircle, XCircle, UserPlus, Settings } from 'lucide-react';
+import { Doughnut, Line } from 'react-chartjs-2';
+import { Users, UserCheck, ShieldAlert, Activity, Eye, CheckCircle, XCircle, UserPlus, FileText, Calendar } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
 
@@ -28,6 +28,7 @@ const StatCard = ({ title, value, icon, color, trend }) => (
 );
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [activeUsers, setActiveUsers] = useState([]);
   const [detainees, setDetainees] = useState([]);
@@ -110,8 +111,11 @@ const AdminDashboard = () => {
           <p className="text-muted small">Supervision globale du système pénitentiaire</p>
         </div>
         <div className="d-flex gap-2">
-          <Button className="btn-premium btn-premium-primary">
-            <Activity size={18} /> Rapport Quotidien
+          <Button className="btn-premium btn-premium-primary" onClick={() => navigate('/incidents')}>
+            <ShieldAlert size={18} /> Registre Incidents
+          </Button>
+          <Button variant="light" className="rounded-pill shadow-sm" onClick={() => navigate('/planning')}>
+            <Calendar size={18} className="me-2" /> Planning
           </Button>
         </div>
       </div>
@@ -231,6 +235,9 @@ const AdminDashboard = () => {
                             </Button>
                             <Button variant="info" size="sm" className="rounded-pill text-white" onClick={() => { setSelectedDetainee(d); setShowDetailModal(true); }}>
                               <Eye size={14} />
+                            </Button>
+                            <Button variant="primary" size="sm" className="rounded-pill" onClick={() => navigate(`/detenus/${d.id}`)}>
+                              <FileText size={14} />
                             </Button>
                           </div>
                         </td>

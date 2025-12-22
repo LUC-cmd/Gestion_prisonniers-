@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Row, Col, Button, Spinner, Alert } from 'react-bootstrap';
-import { Stethoscope, Activity, Heart, AlertCircle, Eye, Clipboard } from 'lucide-react';
+import { Stethoscope, Activity, Heart, AlertCircle, Eye, Clipboard, FileText } from 'lucide-react';
 import DetaineeService from '../services/detainee.service';
 import AuthService from '../services/auth.service';
 import DetaineeDetailModal from './DetaineeDetailModal';
@@ -19,6 +20,7 @@ const StatCard = ({ title, value, icon, color, trend }) => (
 );
 
 const DoctorDashboard = () => {
+    const navigate = useNavigate();
     const [detainees, setDetainees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -108,8 +110,8 @@ const DoctorDashboard = () => {
                                             </td>
                                             <td>
                                                 <span className={`badge-custom ${detainee.medicalStatus === 'Critique' ? 'badge-danger' :
-                                                        detainee.medicalStatus === 'Mauvais' ? 'badge-warning' :
-                                                            detainee.medicalStatus === 'Bon' ? 'badge-success' : 'badge-info'
+                                                    detainee.medicalStatus === 'Mauvais' ? 'badge-warning' :
+                                                        detainee.medicalStatus === 'Bon' ? 'badge-success' : 'badge-info'
                                                     }`}>
                                                     {detainee.medicalStatus || 'N/A'}
                                                 </span>
@@ -118,9 +120,14 @@ const DoctorDashboard = () => {
                                             <td><small className="text-muted">{detainee.allergies || 'Aucune'}</small></td>
                                             <td><small>{new Date().toLocaleDateString()}</small></td>
                                             <td>
-                                                <Button variant="light" size="sm" className="rounded-pill" onClick={() => { setSelectedDetainee(detainee); setShowDetailModal(true); }}>
-                                                    <Eye size={14} />
-                                                </Button>
+                                                <div className="d-flex gap-2">
+                                                    <Button variant="light" size="sm" className="rounded-pill" onClick={() => { setSelectedDetainee(detainee); setShowDetailModal(true); }}>
+                                                        <Eye size={14} />
+                                                    </Button>
+                                                    <Button variant="light" size="sm" className="rounded-pill" onClick={() => navigate(`/detenus/${detainee.id}`)}>
+                                                        <FileText size={14} className="text-primary" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

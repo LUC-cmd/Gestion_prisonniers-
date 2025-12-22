@@ -5,11 +5,7 @@ import {
     Users,
     ShieldAlert,
     Calendar,
-    ClipboardCheck,
     UserSquare2,
-    Building2,
-    BarChart3,
-    Database,
     PlusCircle,
     AlertTriangle,
     Stethoscope
@@ -40,12 +36,12 @@ const Sidebar = ({ roles }) => {
             <div className="sidebar-nav">
                 <div className="px-4 mb-4">
                     <h6 className="text-uppercase small text-muted mb-3" style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>Actions Rapides</h6>
-                    <button className="btn btn-sm btn-outline-light w-100 mb-2 d-flex align-items-center gap-2 py-2">
+                    <Link to="/detenus/nouveau" className="btn btn-sm btn-outline-light w-100 mb-2 d-flex align-items-center gap-2 py-2 text-decoration-none">
                         <PlusCircle size={16} /> Nouveau Détenu
-                    </button>
-                    <button className="btn btn-sm btn-outline-light w-100 d-flex align-items-center gap-2 py-2">
+                    </Link>
+                    <Link to="/incidents/nouveau" className="btn btn-sm btn-outline-light w-100 d-flex align-items-center gap-2 py-2 text-decoration-none">
                         <AlertTriangle size={16} /> Signaler Incident
-                    </button>
+                    </Link>
                 </div>
 
                 <h6 className="px-4 text-uppercase small text-muted mb-2" style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>Menu Principal</h6>

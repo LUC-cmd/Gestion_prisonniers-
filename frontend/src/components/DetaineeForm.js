@@ -1,10 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Form, Button, Row, Col, Tab, Tabs, Alert, ProgressBar } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { Camera, FileUp, Save, User, Shield, Heart, Fingerprint, MapPin } from 'lucide-react';
+import { Camera, FileUp, Save, User, Shield, Heart, Fingerprint } from 'lucide-react';
 import DetaineeService from '../services/detainee.service';
 import FileService from '../services/file.service';
-import { v4 as uuidv4 } from 'uuid';
 
 const DetaineeForm = () => {
     const navigate = useNavigate();
@@ -12,12 +11,10 @@ const DetaineeForm = () => {
     const [successful, setSuccessful] = useState(false);
     const [photoPreview, setPhotoPreview] = useState(null);
     const [photoFile, setPhotoFile] = useState(null);
-    const [documentFiles, setDocumentFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
     const photoInputRef = useRef(null);
-    const documentInputRef = useRef(null);
 
     const [detainee, setDetainee] = useState({
         lastName: '', firstName: '', birthDate: '', birthPlace: '', detentionType: '',
@@ -59,7 +56,7 @@ const DetaineeForm = () => {
             await DetaineeService.createDetainee(detaineeDataToSubmit);
             setMessage('Détenu enregistré avec succès !');
             setSuccessful(true);
-            setTimeout(() => navigate('/personnel-dashboard'), 2000);
+            setTimeout(() => navigate('/detenus'), 2000);
         } catch (error) {
             setMessage(error.response?.data?.message || 'Erreur lors de l\'enregistrement');
             setSuccessful(false);

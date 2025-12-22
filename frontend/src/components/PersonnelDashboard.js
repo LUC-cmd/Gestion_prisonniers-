@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Button, Spinner, Alert } from 'react-bootstrap';
-import { Users, PlusCircle, AlertTriangle, Calendar, Eye, Activity, Building2 } from 'lucide-react';
+import { Users, PlusCircle, AlertTriangle, Calendar, Eye, Activity, Building2, FileText } from 'lucide-react';
 import DetaineeService from '../services/detainee.service';
-import AuthService from '../services/auth.service';
 import DetaineeDetailModal from './DetaineeDetailModal';
 import IncidentModal from './IncidentModal';
 
@@ -26,7 +25,6 @@ const PersonnelDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showIncidentModal, setShowIncidentModal] = useState(false);
-    const [showVisitModal, setShowVisitModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedDetainee, setSelectedDetainee] = useState(null);
 
@@ -61,6 +59,9 @@ const PersonnelDashboard = () => {
                     <Button className="btn-premium btn-premium-primary" onClick={() => navigate('/detenus/nouveau')}>
                         <PlusCircle size={18} /> Nouveau Détenu
                     </Button>
+                    <Button variant="light" className="rounded-pill shadow-sm" onClick={() => navigate('/planning')}>
+                        <Calendar size={18} className="me-2" /> Planning
+                    </Button>
                 </div>
             </div>
 
@@ -86,18 +87,18 @@ const PersonnelDashboard = () => {
                     <div className="glass-card p-4 h-100">
                         <h5 className="fw-bold mb-4">Actions de Terrain</h5>
                         <div className="d-grid gap-3">
-                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3" onClick={() => setShowIncidentModal(true)}>
+                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3" onClick={() => navigate('/incidents/nouveau')}>
                                 <div className="bg-danger text-white p-2 rounded-3"><AlertTriangle size={20} /></div>
                                 <div>
                                     <div className="fw-bold">Signaler un Incident</div>
                                     <div className="text-muted small">Rapport immédiat d'événement</div>
                                 </div>
                             </Button>
-                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3">
+                            <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3" onClick={() => navigate('/planning')}>
                                 <div className="bg-info text-white p-2 rounded-3"><Calendar size={20} /></div>
                                 <div>
-                                    <div className="fw-bold">Planifier une Visite</div>
-                                    <div className="text-muted small">Gestion des parloirs</div>
+                                    <div className="fw-bold">Gestion du Planning</div>
+                                    <div className="text-muted small">Rotations et activités</div>
                                 </div>
                             </Button>
                             <Button variant="light" className="text-start p-3 border-0 shadow-sm d-flex align-items-center gap-3">
@@ -136,9 +137,14 @@ const PersonnelDashboard = () => {
                                                 </span>
                                             </td>
                                             <td>
-                                                <Button variant="light" size="sm" className="rounded-pill" onClick={() => { setSelectedDetainee(detainee); setShowDetailModal(true); }}>
-                                                    <Eye size={14} />
-                                                </Button>
+                                                <div className="d-flex gap-2">
+                                                    <Button variant="light" size="sm" className="rounded-pill" onClick={() => { setSelectedDetainee(detainee); setShowDetailModal(true); }}>
+                                                        <Eye size={14} />
+                                                    </Button>
+                                                    <Button variant="light" size="sm" className="rounded-pill" onClick={() => navigate(`/detenus/${detainee.id}`)}>
+                                                        <FileText size={14} className="text-primary" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

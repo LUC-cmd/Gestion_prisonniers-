@@ -1,8 +1,17 @@
 import React from 'react';
 import { Bell, Search, User, LogOut, Settings, Globe } from 'lucide-react';
 import { Dropdown } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ user, onLogout }) => {
+    const navigate = useNavigate();
+
+    const handleSearch = (e) => {
+        if (e.key === 'Enter') {
+            navigate(`/detenus?search=${e.target.value}`);
+        }
+    };
+
     return (
         <div className="top-navbar">
             <div className="d-flex align-items-center gap-3 flex-grow-1">
@@ -13,6 +22,7 @@ const Navbar = ({ user, onLogout }) => {
                         className="form-control border-0 bg-light"
                         placeholder="Rechercher un détenu..."
                         style={{ paddingLeft: '40px', borderRadius: '10px' }}
+                        onKeyDown={handleSearch}
                     />
                 </div>
             </div>

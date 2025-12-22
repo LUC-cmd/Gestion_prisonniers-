@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import './styles/premium.css';
-import { Badge } from 'react-bootstrap';
 
 import Login from './components/Login';
 import Register from './components/Register';
@@ -14,6 +13,11 @@ import PersonnelDashboard from './components/PersonnelDashboard';
 import MainLayout from './components/MainLayout';
 import AuthService from './services/auth.service';
 import UserService from './services/user.service';
+import IncidentList from './components/IncidentList';
+import IncidentFormPage from './components/IncidentFormPage';
+import DetaineeFile from './components/DetaineeFile';
+import DetaineeList from './components/DetaineeList';
+import Planning from './components/Planning';
 
 const DashboardRedirector = () => {
   const currentUser = AuthService.getCurrentUser();
@@ -53,15 +57,12 @@ const PendingRoleAssignmentPage = () => (
 
 function App() {
   const [currentUser, setCurrentUser] = useState(AuthService.getCurrentUser());
-  const [pendingUserCount, setPendingUserCount] = useState(0);
 
   useEffect(() => {
     if (currentUser && currentUser.roles.includes("ROLE_ADMIN")) {
       const fetchPendingUsers = async () => {
         try {
-          const response = await UserService.getAllUsers();
-          const pending = response.data.filter(user => user.roles.length === 0);
-          setPendingUserCount(pending.length);
+          await UserService.getAllUsers();
         } catch (error) {
           console.error("Could not fetch pending users:", error);
         }
@@ -124,10 +125,50 @@ function App() {
           ) : <UnauthorizedPage />
         } />
 
+        <Route path="/detenus" element={
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL")) ? (
+            <MainLayout user={currentUser} onLogout={logOut}>
+              <DetaineeList />
+            </MainLayout>
+          ) : <UnauthorizedPage />
+        } />
+
         <Route path="/detenus/nouveau" element={
           (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL")) ? (
             <MainLayout user={currentUser} onLogout={logOut}>
               <DetaineeForm />
+            </MainLayout>
+          ) : <UnauthorizedPage />
+        } />
+
+        <Route path="/detenus/:id" element={
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL") || hasRole("ROLE_MEDECIN")) ? (
+            <MainLayout user={currentUser} onLogout={logOut}>
+              <DetaineeFile />
+            </MainLayout>
+          ) : <UnauthorizedPage />
+        } />
+
+        <Route path="/incidents" element={
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL")) ? (
+            <MainLayout user={currentUser} onLogout={logOut}>
+              <IncidentList />
+            </MainLayout>
+          ) : <UnauthorizedPage />
+        } />
+
+        <Route path="/incidents/nouveau" element={
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL")) ? (
+            <MainLayout user={currentUser} onLogout={logOut}>
+              <IncidentFormPage />
+            </MainLayout>
+          ) : <UnauthorizedPage />
+        } />
+
+        <Route path="/planning" element={
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL") || hasRole("ROLE_MEDECIN")) ? (
+            <MainLayout user={currentUser} onLogout={logOut}>
+              <Planning />
             </MainLayout>
           ) : <UnauthorizedPage />
         } />

@@ -20,7 +20,7 @@ const getMockDetainees = () => {
             {
                 id: 3, firstName: 'Paul', lastName: 'Bernard',
                 arrivalDate: '2023-12-01', detentionType: 'Préventive',
-                status: 'PENDING', medicalStatus: 'Mauvais', bloodType: 'B+',
+                status: 'PENDING_VALIDATION', medicalStatus: 'Mauvais', bloodType: 'B+',
                 allergies: 'Pollen', cellNumber: 'C-012'
             }
         ];
@@ -37,7 +37,7 @@ const createDetainee = (detaineeData) => {
             const newDetainee = {
                 ...detaineeData,
                 id: detainees.length + 1,
-                status: 'PENDING'
+                status: 'PENDING_VALIDATION'
             };
             detainees.push(newDetainee);
             localStorage.setItem(MOCK_DETAINEES_KEY, JSON.stringify(detainees));
@@ -69,9 +69,21 @@ const updateDetaineeStatus = (detaineeId, status, adminComments) => {
     });
 };
 
+const getDetaineeById = (id) => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const detainees = getMockDetainees();
+            const detainee = detainees.find(d => d.id === parseInt(id));
+            if (detainee) resolve({ data: detainee });
+            else reject(new Error('Détenu non trouvé'));
+        }, 300);
+    });
+};
+
 const DetaineeService = {
     createDetainee,
     getAllDetainees,
+    getDetaineeById,
     updateDetaineeStatus,
 };
 

@@ -6,7 +6,7 @@ const getMockIncidents = () => {
     return incidents ? JSON.parse(incidents) : [];
 };
 
-const getIncidents = () => {
+const getAllIncidents = () => {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({ data: getMockIncidents() });
@@ -31,7 +31,7 @@ const createIncident = (incidentData) => {
 };
 
 const IncidentService = {
-    getIncidents,
+    getAllIncidents,
     createIncident,
 };
 

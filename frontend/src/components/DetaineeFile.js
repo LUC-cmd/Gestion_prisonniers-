@@ -1,0 +1,287 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Row, Col, Tabs, Tab, Badge, Button, Table } from 'react-bootstrap';
+import { User, Shield, Heart, Fingerprint, Printer, Edit, ArrowLeft, AlertTriangle } from 'lucide-react';
+import DetaineeService from '../services/detainee.service';
+
+const DetaineeFile = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [detainee, setDetainee] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (id) {
+            fetchDetainee(id);
+        }
+    }, [id]);
+
+    const fetchDetainee = async (detaineeId) => {
+        try {
+            const response = await DetaineeService.getDetaineeById(detaineeId);
+            setDetainee(response.data);
+        } catch (err) {
+            setError('Impossible de charger le dossier du détenu.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'PENDING_VALIDATION': return <Badge className="badge-custom badge-warning">En attente</Badge>;
+            case 'VALIDATED': return <Badge className="badge-custom badge-success">Validé</Badge>;
+            case 'REJECTED': return <Badge className="badge-custom badge-danger">Rejeté</Badge>;
+            default: return <Badge className="badge-custom badge-info">{status}</Badge>;
+        }
+    };
+
+    const getSecurityBadge = (level) => {
+        switch (level) {
+            case 'Élevé': return <Badge className="badge-custom badge-danger">Niveau Élevé</Badge>;
+            case 'Moyen': return <Badge className="badge-custom badge-warning">Niveau Moyen</Badge>;
+            case 'Faible': return <Badge className="badge-custom badge-success">Niveau Faible</Badge>;
+            default: return <Badge className="badge-custom badge-info">{level || 'Non défini'}</Badge>;
+        }
+    };
+
+    if (loading) return <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div><p className="mt-2">Chargement du dossier...</p></div>;
+    if (error) return <div className="alert alert-danger m-4">{error}</div>;
+    if (!detainee) return <div className="alert alert-warning m-4">Détenu non trouvé.</div>;
+
+    return (
+        <div className="animate-fade-in">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex align-items-center gap-3">
+                    <Button variant="light" className="rounded-circle p-2" onClick={() => navigate(-1)}>
+                        <ArrowLeft size={20} />
+                    </Button>
+                    <div>
+                        <h2 className="fw-bold text-primary mb-1">Dossier Individuel</h2>
+                        <p className="text-muted small">Consultation détaillée du dossier pénitentiaire</p>
+                    </div>
+                </div>
+                <div className="d-flex gap-2">
+                    <Button variant="light" className="rounded-pill shadow-sm">
+                        <Printer size={18} className="me-2" /> Imprimer
+                    </Button>
+                    <Button className="btn-premium btn-premium-primary">
+                        <Edit size={18} /> Modifier le dossier
+                    </Button>
+                </div>
+            </div>
+
+            <Row>
+                <Col lg={3}>
+                    <div className="glass-card p-4 text-center mb-4">
+                        <div className="position-relative d-inline-block mb-3">
+                            <img
+                                src={detainee.photoUrl || 'https://via.placeholder.com/200'}
+                                alt="Detainee"
+                                className="rounded-3 shadow-sm"
+                                style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', border: '4px solid white' }}
+                            />
+                            <div className="position-absolute bottom-0 end-0 p-2">
+                                {getSecurityBadge(detainee.securityLevel)}
+                            </div>
+                        </div>
+                        <h4 className="fw-bold mb-1">{detainee.lastName.toUpperCase()}</h4>
+                        <h5 className="text-muted mb-3">{detainee.firstName}</h5>
+                        <div className="d-flex flex-column gap-2 text-start mt-4">
+                            <div className="d-flex justify-content-between border-bottom pb-2">
+                                <span className="small text-muted">N° Écrou</span>
+                                <span className="fw-bold">#{detainee.id}</span>
+                            </div>
+                            <div className="d-flex justify-content-between border-bottom pb-2">
+                                <span className="small text-muted">Statut</span>
+                                {getStatusBadge(detainee.status)}
+                            </div>
+                            <div className="d-flex justify-content-between border-bottom pb-2">
+                                <span className="small text-muted">Âge</span>
+                                <span className="fw-bold">{new Date().getFullYear() - new Date(detainee.birthDate).getFullYear()} ans</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-4">
+                        <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                            <AlertTriangle size={16} className="text-danger" /> Alertes Vigilance
+                        </h6>
+                        <div className="small text-danger bg-danger bg-opacity-10 p-2 rounded border-start border-3 border-danger mb-2">
+                            Risque de violence modéré
+                        </div>
+                        <div className="small text-warning bg-warning bg-opacity-10 p-2 rounded border-start border-3 border-warning">
+                            Allergie pénicilline
+                        </div>
+                    </div>
+                </Col>
+
+                <Col lg={9}>
+                    <div className="glass-card p-0 overflow-hidden mb-4">
+                        <Tabs defaultActiveKey="identity" className="custom-tabs px-4 pt-3 border-0">
+                            <Tab eventKey="identity" title={<><User size={16} className="me-2" />Identité & État Civil</>}>
+                                <div className="p-4">
+                                    <Row className="mb-4">
+                                        <Col md={6}>
+                                            <h6 className="text-primary fw-bold mb-3">Informations Personnelles</h6>
+                                            <Table borderless size="sm">
+                                                <tbody>
+                                                    <tr><td className="text-muted" style={{ width: '150px' }}>Nom complet</td><td className="fw-bold">{detainee.lastName} {detainee.firstName}</td></tr>
+                                                    <tr><td className="text-muted">Date de naissance</td><td>{new Date(detainee.birthDate).toLocaleDateString('fr-FR')}</td></tr>
+                                                    <tr><td className="text-muted">Lieu de naissance</td><td>{detainee.birthPlace}</td></tr>
+                                                    <tr><td className="text-muted">Nationalité</td><td>{detainee.nationality}</td></tr>
+                                                    <tr><td className="text-muted">N° Identification</td><td>{detainee.identificationNumber}</td></tr>
+                                                </tbody>
+                                            </Table>
+                                        </Col>
+                                        <Col md={6}>
+                                            <h6 className="text-primary fw-bold mb-3">Coordonnées & Origine</h6>
+                                            <Table borderless size="sm">
+                                                <tbody>
+                                                    <tr><td className="text-muted" style={{ width: '150px' }}>Dernière adresse</td><td>{detainee.address}</td></tr>
+                                                    <tr><td className="text-muted">Situation familiale</td><td>Célibataire</td></tr>
+                                                    <tr><td className="text-muted">Profession</td><td>Ouvrier</td></tr>
+                                                </tbody>
+                                            </Table>
+                                        </Col>
+                                    </Row>
+                                    <hr />
+                                    <h6 className="text-primary fw-bold mb-3">Contacts d'Urgence</h6>
+                                    <Table className="custom-table">
+                                        <thead>
+                                            <tr><th>Nom</th><th>Relation</th><th>Téléphone</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            {detainee.familyContactsJson ? JSON.parse(detainee.familyContactsJson).map((contact, i) => (
+                                                <tr key={i}><td>{contact.name}</td><td>{contact.relation}</td><td>{contact.phone}</td></tr>
+                                            )) : <tr><td colSpan="3" className="text-center text-muted">Aucun contact enregistré</td></tr>}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            </Tab>
+
+                            <Tab eventKey="judicial" title={<><Shield size={16} className="me-2" />Situation Judiciaire</>}>
+                                <div className="p-4">
+                                    <Row className="mb-4">
+                                        <Col md={6}>
+                                            <h6 className="text-primary fw-bold mb-3">Détails de l'Écrou</h6>
+                                            <Table borderless size="sm">
+                                                <tbody>
+                                                    <tr><td className="text-muted" style={{ width: '150px' }}>Type de détention</td><td><Badge bg="secondary">{detainee.detentionType}</Badge></td></tr>
+                                                    <tr><td className="text-muted">Date d'arrivée</td><td>{new Date(detainee.arrivalDate).toLocaleDateString('fr-FR')}</td></tr>
+                                                    <tr><td className="text-muted">Tribunal</td><td>{detainee.court}</td></tr>
+                                                </tbody>
+                                            </Table>
+                                        </Col>
+                                        <Col md={6}>
+                                            <h6 className="text-primary fw-bold mb-3">Peine & Libération</h6>
+                                            <Table borderless size="sm">
+                                                <tbody>
+                                                    <tr><td className="text-muted" style={{ width: '150px' }}>Date de jugement</td><td>{detainee.sentenceDate ? new Date(detainee.sentenceDate).toLocaleDateString('fr-FR') : 'N/A'}</td></tr>
+                                                    <tr><td className="text-muted">Fin de peine prévue</td><td className="text-danger fw-bold">{detainee.expectedEndDate ? new Date(detainee.expectedEndDate).toLocaleDateString('fr-FR') : 'N/A'}</td></tr>
+                                                </tbody>
+                                            </Table>
+                                        </Col>
+                                    </Row>
+                                    <div className="bg-light p-3 rounded-3 mb-4">
+                                        <h6 className="fw-bold mb-2">Infractions retenues</h6>
+                                        <p className="mb-0">{detainee.offenses}</p>
+                                    </div>
+                                    <div className="bg-light p-3 rounded-3">
+                                        <h6 className="fw-bold mb-2">Détail de la condamnation</h6>
+                                        <p className="mb-0">{detainee.sentence}</p>
+                                    </div>
+                                </div>
+                            </Tab>
+
+                            <Tab eventKey="medical" title={<><Heart size={16} className="me-2" />Suivi Médical</>}>
+                                <div className="p-4">
+                                    <Row className="mb-4">
+                                        <Col md={4}>
+                                            <div className="text-center p-3 bg-light rounded-3">
+                                                <div className="small text-muted mb-1">Groupe Sanguin</div>
+                                                <div className="h3 fw-bold text-danger mb-0">{detainee.bloodType}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={4}>
+                                            <div className="text-center p-3 bg-light rounded-3">
+                                                <div className="small text-muted mb-1">État de Santé</div>
+                                                <div className="h3 fw-bold text-primary mb-0">{detainee.medicalStatus}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={4}>
+                                            <div className="text-center p-3 bg-light rounded-3">
+                                                <div className="small text-muted mb-1">Dernière Visite</div>
+                                                <div className="h3 fw-bold text-secondary mb-0">12/12/2023</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                    <h6 className="text-primary fw-bold mb-3">Dossier Médical</h6>
+                                    <Table borderless size="sm">
+                                        <tbody>
+                                            <tr><td className="text-muted" style={{ width: '200px' }}>Allergies</td><td className="text-danger fw-bold">{detainee.allergies || 'Aucune signalée'}</td></tr>
+                                            <tr><td className="text-muted">Traitements en cours</td><td>{detainee.treatments || 'Aucun'}</td></tr>
+                                            <tr><td className="text-muted">Antécédents</td><td>{detainee.medicalHistory || 'Néant'}</td></tr>
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            </Tab>
+
+                            <Tab eventKey="biometric" title={<><Fingerprint size={16} className="me-2" />Biométrie</>}>
+                                <div className="p-4">
+                                    <h6 className="text-primary fw-bold mb-3">Signes Distinctifs</h6>
+                                    <p className="mb-4">{detainee.distinctiveMarks || 'Aucun signe distinctif particulier signalé.'}</p>
+
+                                    <h6 className="text-primary fw-bold mb-3">Fichiers Biométriques</h6>
+                                    <Row>
+                                        <Col md={6}>
+                                            <div className="p-3 border rounded-3 d-flex align-items-center justify-content-between">
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <Fingerprint size={32} className="text-muted" />
+                                                    <div>
+                                                        <div className="fw-bold">Empreintes Digitales</div>
+                                                        <div className="small text-muted">Format NIST .eft</div>
+                                                    </div>
+                                                </div>
+                                                <Button variant="light" size="sm">Consulter</Button>
+                                            </div>
+                                        </Col>
+                                        <Col md={6}>
+                                            <div className="p-3 border rounded-3 d-flex align-items-center justify-content-between">
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <User size={32} className="text-muted" />
+                                                    <div>
+                                                        <div className="fw-bold">Scan Facial 3D</div>
+                                                        <div className="small text-muted">Format .obj / .jpg</div>
+                                                    </div>
+                                                </div>
+                                                <Button variant="light" size="sm">Consulter</Button>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </div>
+                            </Tab>
+                        </Tabs>
+                    </div>
+
+                    <div className="glass-card p-4">
+                        <h6 className="fw-bold mb-3">Historique des Mouvements</h6>
+                        <Table responsive className="custom-table">
+                            <thead>
+                                <tr><th>Date</th><th>Type</th><th>Provenance/Destination</th><th>Motif</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>12/05/2023</td><td>Entrée</td><td>TGI Paris</td><td>Écrou initial</td></tr>
+                                <tr><td>15/06/2023</td><td>Transfert interne</td><td>Quartier A → Quartier B</td><td>Réorganisation</td></tr>
+                            </tbody>
+                        </Table>
+                    </div>
+                </Col>
+            </Row>
+        </div>
+    );
+};
+
+export default DetaineeFile;
