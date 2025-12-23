@@ -96,12 +96,40 @@ const updateDetainee = (id, detaineeData) => {
     });
 };
 
+const getTransfersByDetaineeId = (detaineeId) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const transfers = JSON.parse(localStorage.getItem('mock_transfers') || '[]');
+            const filtered = transfers.filter(t => t.detaineeId === parseInt(detaineeId));
+            resolve({ data: filtered });
+        }, 300);
+    });
+};
+
+const addTransfer = (transferData) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const transfers = JSON.parse(localStorage.getItem('mock_transfers') || '[]');
+            const newTransfer = {
+                ...transferData,
+                id: transfers.length + 1,
+                date: new Date().toISOString()
+            };
+            transfers.push(newTransfer);
+            localStorage.setItem('mock_transfers', JSON.stringify(transfers));
+            resolve({ data: newTransfer });
+        }, 500);
+    });
+};
+
 const DetaineeService = {
     createDetainee,
     getAllDetainees,
     getDetaineeById,
     updateDetaineeStatus,
     updateDetainee,
+    getTransfersByDetaineeId,
+    addTransfer
 };
 
 export default DetaineeService;

@@ -1,11 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Badge, Button, Table, Tabs, Tab, Modal, Form } from 'react-bootstrap';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Shield, Activity, Truck, Users, Plus } from 'lucide-react';
+import DetaineeService from '../services/detainee.service';
+import PlanningService from '../services/planning.service';
 
 const Planning = () => {
     const [currentDate] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
-    const [planningType, setPlanningType] = useState('guard');
+    const [planningType, setPlanningType] = useState('Transfert Externe');
+    const [detainees, setDetainees] = useState([]);
+    const [allPlanning, setAllPlanning] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const [newActivity, setNewActivity] = useState({
+        detaineeId: '',
+        type: 'Transfert Externe',
+        destination: '',
+        time: '',
+        date: new Date().toISOString().split('T')[0],
+        details: ''
+    });
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const [detaineesRes, planningRes] = await Promise.all([
+                DetaineeService.getAllDetainees(),
+                PlanningService.getAllPlanning()
+            ]);
+            setDetainees(detaineesRes.data);
+            setAllPlanning(planningRes.data);
+        } catch (err) {
+            console.error("Erreur lors du chargement des données", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddActivity = async (e) => {
+        e.preventDefault();
+        try {
+            const selectedDetainee = detainees.find(d => d.id === parseInt(newActivity.detaineeId));
+            const activityData = {
+                ...newActivity,
+                detaineeName: selectedDetainee ? `${selectedDetainee.lastName} ${selectedDetainee.firstName}` : 'N/A'
+            };
+            await PlanningService.addPlanning(activityData);
+            await fetchData();
+            setShowModal(false);
+            setNewActivity({
+                detaineeId: '',
+                type: 'Transfert Externe',
+                destination: '',
+                time: '',
+                date: new Date().toISOString().split('T')[0],
+                details: ''
+            });
+        } catch (err) {
+            alert("Erreur lors de l'ajout de l'activité");
+        }
+    };
 
     const timeSlots = ['06:00 - 12:00', '12:00 - 18:00', '18:00 - 00:00', '00:00 - 06:00'];
 
@@ -16,18 +73,6 @@ const Planning = () => {
         { post: 'Poste de Contrôle', shifts: ['Lucie Bernard', 'Thomas Petit', 'Marc Simon', 'Julie Morel'], status: 'Complet' },
     ];
 
-    const transferSchedule = [
-        { id: 1, detainee: 'DUPONT Jean', type: 'Externe', destination: 'Hôpital Central', time: '09:00', status: 'Confirmé' },
-        { id: 2, detainee: 'LEROI Marc', type: 'Interne', destination: 'Quartier C', time: '14:30', status: 'En attente' },
-        { id: 3, detainee: 'BERNARD Paul', type: 'Externe', destination: 'Tribunal Gland', time: '08:15', status: 'Terminé' },
-    ];
-
-    const visitSchedule = [
-        { id: 1, detainee: 'DUPONT Jean', visitor: 'Mme Dupont (Épouse)', room: 'Parloir 1', time: '10:00 - 11:00', status: 'En cours' },
-        { id: 2, detainee: 'SIMON Marc', visitor: 'M. Simon (Père)', room: 'Parloir 3', time: '14:00 - 15:00', status: 'À venir' },
-        { id: 3, detainee: 'MOREL Julie', visitor: 'Avocat', room: 'Box 2', time: '11:30 - 12:30', status: 'Confirmé' },
-    ];
-
     const getStatusBadge = (status) => {
         switch (status) {
             case 'Complet': case 'Confirmé': case 'Terminé': return <Badge className="badge-custom badge-success">{status}</Badge>;
@@ -36,6 +81,11 @@ const Planning = () => {
             default: return <Badge className="badge-custom badge-info">{status}</Badge>;
         }
     };
+
+    const transferPlanning = allPlanning.filter(p => p.type.includes('Transfert'));
+    const visitPlanning = allPlanning.filter(p => p.type === 'Visite');
+
+    if (loading) return <div className="text-center py-5">Chargement...</div>;
 
     return (
         <div className="animate-fade-in">
@@ -57,7 +107,7 @@ const Planning = () => {
             <Row className="mb-4">
                 <Col lg={8}>
                     <div className="glass-card p-0 overflow-hidden mb-4">
-                        <Tabs defaultActiveKey="guard" className="custom-tabs px-4 pt-3 border-0" onSelect={(k) => setPlanningType(k)}>
+                        <Tabs defaultActiveKey="guard" className="custom-tabs px-4 pt-3 border-0">
                             <Tab eventKey="guard" title={<><Shield size={16} className="me-2" />Surveillants</>}>
                                 <div className="p-4">
                                     <div className="d-flex justify-content-between align-items-center mb-4">
@@ -106,15 +156,16 @@ const Planning = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {transferSchedule.map((item) => (
+                                                {transferPlanning.map((item) => (
                                                     <tr key={item.id}>
-                                                        <td className="fw-bold">{item.detainee}</td>
-                                                        <td><Badge bg={item.type === 'Externe' ? 'danger' : 'info'}>{item.type}</Badge></td>
+                                                        <td className="fw-bold">{item.detaineeName}</td>
+                                                        <td><Badge bg={item.type === 'Transfert Externe' ? 'danger' : 'info'}>{item.type}</Badge></td>
                                                         <td>{item.destination}</td>
                                                         <td>{item.time}</td>
                                                         <td className="text-center">{getStatusBadge(item.status)}</td>
                                                     </tr>
                                                 ))}
+                                                {transferPlanning.length === 0 && <tr><td colSpan="5" className="text-center py-3 text-muted">Aucun transfert planifié</td></tr>}
                                             </tbody>
                                         </Table>
                                     </div>
@@ -129,21 +180,20 @@ const Planning = () => {
                                                 <tr>
                                                     <th>Détenu</th>
                                                     <th>Visiteur</th>
-                                                    <th>Lieu</th>
                                                     <th>Horaire</th>
                                                     <th className="text-center">Statut</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {visitSchedule.map((item) => (
+                                                {visitPlanning.map((item) => (
                                                     <tr key={item.id}>
-                                                        <td className="fw-bold">{item.detainee}</td>
-                                                        <td>{item.visitor}</td>
-                                                        <td>{item.room}</td>
+                                                        <td className="fw-bold">{item.detaineeName}</td>
+                                                        <td>{item.visitor || 'N/A'}</td>
                                                         <td>{item.time}</td>
                                                         <td className="text-center">{getStatusBadge(item.status)}</td>
                                                     </tr>
                                                 ))}
+                                                {visitPlanning.length === 0 && <tr><td colSpan="4" className="text-center py-3 text-muted">Aucune visite planifiée</td></tr>}
                                             </tbody>
                                         </Table>
                                     </div>
@@ -194,37 +244,121 @@ const Planning = () => {
                 </Col>
             </Row>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
                 <Modal.Header closeButton className="border-0">
                     <Modal.Title className="fw-bold">Nouvelle Planification</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form>
+                    <Form onSubmit={handleAddActivity}>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">Détenu concerné</Form.Label>
+                                    <Form.Select
+                                        required
+                                        value={newActivity.detaineeId}
+                                        onChange={(e) => setNewActivity({ ...newActivity, detaineeId: e.target.value })}
+                                        className="border-0 bg-light rounded-3"
+                                    >
+                                        <option value="">Sélectionner un détenu</option>
+                                        {detainees.map(d => (
+                                            <option key={d.id} value={d.id}>{d.lastName} {d.firstName} (#{d.id})</option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">Type d'activité</Form.Label>
+                                    <Form.Select
+                                        value={newActivity.type}
+                                        onChange={(e) => setNewActivity({ ...newActivity, type: e.target.value })}
+                                        className="border-0 bg-light rounded-3"
+                                    >
+                                        <option value="Transfert Interne">Transfert Interne</option>
+                                        <option value="Transfert Externe">Transfert Externe</option>
+                                        <option value="Visite">Visite / Parloir</option>
+                                        <option value="Médical">Rendez-vous Médical</option>
+                                        <option value="Tribunal">Audience Tribunal</option>
+                                        <option value="Autre">Autre activité</option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">Date</Form.Label>
+                                    <Form.Control
+                                        type="date"
+                                        required
+                                        value={newActivity.date}
+                                        onChange={(e) => setNewActivity({ ...newActivity, date: e.target.value })}
+                                        className="border-0 bg-light rounded-3"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">Heure</Form.Label>
+                                    <Form.Control
+                                        type="time"
+                                        required
+                                        value={newActivity.time}
+                                        onChange={(e) => setNewActivity({ ...newActivity, time: e.target.value })}
+                                        className="border-0 bg-light rounded-3"
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+
                         <Form.Group className="mb-3">
-                            <Form.Label className="small fw-bold">Type d'activité</Form.Label>
-                            <Form.Select value={planningType} onChange={(e) => setPlanningType(e.target.value)} className="border-0 bg-light rounded-3">
-                                <option value="guard">Rotation Surveillant</option>
-                                <option value="transfers">Transfert Détenu</option>
-                                <option value="visits">Visite / Parloir</option>
-                            </Form.Select>
+                            <Form.Label className="small fw-bold">Destination / Lieu</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Ex: Quartier B, Hôpital, Parloir 1..."
+                                value={newActivity.destination}
+                                onChange={(e) => setNewActivity({ ...newActivity, destination: e.target.value })}
+                                className="border-0 bg-light rounded-3"
+                            />
                         </Form.Group>
+
+                        {newActivity.type === 'Visite' && (
+                            <Form.Group className="mb-3">
+                                <Form.Label className="small fw-bold">Nom du visiteur</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Nom du visiteur..."
+                                    value={newActivity.visitor || ''}
+                                    onChange={(e) => setNewActivity({ ...newActivity, visitor: e.target.value })}
+                                    className="border-0 bg-light rounded-3"
+                                />
+                            </Form.Group>
+                        )}
+
                         <Form.Group className="mb-3">
-                            <Form.Label className="small fw-bold">Détails</Form.Label>
-                            <Form.Control type="text" placeholder="Ex: Transfert vers TGI, Parloir Famille..." className="border-0 bg-light rounded-3" />
+                            <Form.Label className="small fw-bold">Détails / Notes</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={2}
+                                placeholder="Notes complémentaires..."
+                                value={newActivity.details}
+                                onChange={(e) => setNewActivity({ ...newActivity, details: e.target.value })}
+                                className="border-0 bg-light rounded-3"
+                            />
                         </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="small fw-bold">Date & Heure</Form.Label>
-                            <Form.Control type="datetime-local" className="border-0 bg-light rounded-3" />
-                        </Form.Group>
+
+                        <div className="d-flex justify-content-end gap-2 mt-4">
+                            <Button variant="light" onClick={() => setShowModal(false)}>Annuler</Button>
+                            <Button type="submit" className="btn-premium btn-premium-primary">Enregistrer la planification</Button>
+                        </div>
                     </Form>
                 </Modal.Body>
-                <Modal.Footer className="border-0">
-                    <Button variant="light" onClick={() => setShowModal(false)}>Annuler</Button>
-                    <Button className="btn-premium btn-premium-primary" onClick={() => setShowModal(false)}>Enregistrer</Button>
-                </Modal.Footer>
             </Modal>
         </div>
     );
 };
 
 export default Planning;
+

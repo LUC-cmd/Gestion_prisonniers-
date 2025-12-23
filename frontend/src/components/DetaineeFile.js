@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Row, Col, Tabs, Tab, Badge, Button, Table, Modal, Form } from 'react-bootstrap';
-import { User, Shield, Heart, Fingerprint, Printer, Edit, ArrowLeft, AlertTriangle, Camera, Trash2, Plus } from 'lucide-react';
+import { User, Shield, Heart, Fingerprint, Printer, Edit, ArrowLeft, AlertTriangle, Camera, Trash2, Plus, Truck } from 'lucide-react';
 import AuthService from '../services/auth.service';
 import DetaineeService from '../services/detainee.service';
 import IncidentService from '../services/incident.service';
@@ -17,6 +17,9 @@ const DetaineeFile = () => {
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [newPhotoUrl, setNewPhotoUrl] = useState('');
     const [photoType, setPhotoType] = useState('Face');
+    const [transfers, setTransfers] = useState([]);
+    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [newTransfer, setNewTransfer] = useState({ type: 'Interne', destination: '', reason: '' });
 
     const currentUser = AuthService.getCurrentUser();
     const isAdmin = currentUser?.roles?.includes('ROLE_ADMIN');
@@ -30,12 +33,14 @@ const DetaineeFile = () => {
 
     const fetchDetainee = async (detaineeId) => {
         try {
-            const [detaineeRes, incidentsRes] = await Promise.all([
+            const [detaineeRes, incidentsRes, transfersRes] = await Promise.all([
                 DetaineeService.getDetaineeById(detaineeId),
-                IncidentService.getIncidentsByDetaineeId(detaineeId)
+                IncidentService.getIncidentsByDetaineeId(detaineeId),
+                DetaineeService.getTransfersByDetaineeId(detaineeId)
             ]);
             setDetainee(detaineeRes.data);
             setIncidents(incidentsRes.data);
+            setTransfers(transfersRes.data);
 
             // Parse photos
             try {
@@ -79,6 +84,23 @@ const DetaineeFile = () => {
             setPhotos(updatedPhotos);
         } catch (err) {
             alert("Erreur lors de la suppression");
+        }
+    };
+
+    const handleAddTransfer = async () => {
+        try {
+            const transferData = {
+                ...newTransfer,
+                detaineeId: parseInt(id),
+                detaineeName: `${detainee.lastName} ${detainee.firstName}`
+            };
+            await DetaineeService.addTransfer(transferData);
+            const transfersRes = await DetaineeService.getTransfersByDetaineeId(id);
+            setTransfers(transfersRes.data);
+            setShowTransferModal(false);
+            setNewTransfer({ type: 'Interne', destination: '', reason: '' });
+        } catch (err) {
+            alert("Erreur lors de l'ajout du transfert");
         }
     };
 
@@ -409,6 +431,36 @@ const DetaineeFile = () => {
                                     </Row>
                                 </div>
                             </Tab>
+
+                            <Tab eventKey="transfers" title={<><Truck size={16} className="me-2" />Transferts</>}>
+                                <div className="p-4">
+                                    <div className="d-flex justify-content-between align-items-center mb-4">
+                                        <h6 className="text-primary fw-bold mb-0">Historique des Transferts</h6>
+                                        {canManage && (
+                                            <Button variant="primary" size="sm" className="rounded-pill" onClick={() => setShowTransferModal(true)}>
+                                                <Plus size={14} className="me-1" /> Nouveau Transfert
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <Table responsive className="custom-table">
+                                        <thead>
+                                            <tr><th>Date</th><th>Type</th><th>Destination</th><th>Motif</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            {transfers.length > 0 ? transfers.map(t => (
+                                                <tr key={t.id}>
+                                                    <td>{new Date(t.date).toLocaleDateString('fr-FR')}</td>
+                                                    <td><Badge bg={t.type === 'Externe' ? 'danger' : 'info'}>{t.type}</Badge></td>
+                                                    <td>{t.destination}</td>
+                                                    <td>{t.reason}</td>
+                                                </tr>
+                                            )) : (
+                                                <tr><td colSpan="4" className="text-center text-muted">Aucun transfert enregistré</td></tr>
+                                            )}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            </Tab>
                         </Tabs>
                     </div>
 
@@ -462,6 +514,52 @@ const DetaineeFile = () => {
                 <Modal.Footer className="border-0">
                     <Button variant="light" onClick={() => setShowPhotoModal(false)}>Annuler</Button>
                     <Button variant="primary" onClick={handleAddPhoto}>Ajouter à la session</Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Planifier un Transfert</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Type de transfert</Form.Label>
+                            <Form.Select
+                                value={newTransfer.type}
+                                onChange={(e) => setNewTransfer({ ...newTransfer, type: e.target.value })}
+                                className="border-0 bg-light rounded-3"
+                            >
+                                <option value="Interne">Interne (Changement de cellule/quartier)</option>
+                                <option value="Externe">Externe (Hôpital, Tribunal, Autre prison)</option>
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Destination</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Ex: Quartier B, Hôpital Central..."
+                                value={newTransfer.destination}
+                                onChange={(e) => setNewTransfer({ ...newTransfer, destination: e.target.value })}
+                                className="border-0 bg-light rounded-3"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Motif</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                placeholder="Raison du transfert..."
+                                value={newTransfer.reason}
+                                onChange={(e) => setNewTransfer({ ...newTransfer, reason: e.target.value })}
+                                className="border-0 bg-light rounded-3"
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer className="border-0">
+                    <Button variant="light" onClick={() => setShowTransferModal(false)}>Annuler</Button>
+                    <Button variant="primary" onClick={handleAddTransfer}>Enregistrer le transfert</Button>
                 </Modal.Footer>
             </Modal>
         </div>

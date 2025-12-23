@@ -51,6 +51,9 @@ const AdminDashboard = () => {
   const [editingRole, setEditingRole] = useState(null);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'ROLE_PERSONNEL' });
+  const [showNewRoleModal, setShowNewRoleModal] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRolePermissions, setNewRolePermissions] = useState([]);
 
   const allPossiblePermissions = [
     'ALL_ACCESS', 'MANAGE_USERS', 'MANAGE_DETAINEES', 'VIEW_DETAINEES',
