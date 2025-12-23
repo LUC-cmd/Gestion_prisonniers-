@@ -80,11 +80,28 @@ const getDetaineeById = (id) => {
     });
 };
 
+const updateDetainee = (id, detaineeData) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const detainees = getMockDetainees();
+            const index = detainees.findIndex(d => d.id === parseInt(id));
+            if (index !== -1) {
+                detainees[index] = { ...detainees[index], ...detaineeData };
+                localStorage.setItem(MOCK_DETAINEES_KEY, JSON.stringify(detainees));
+                resolve({ data: detainees[index] });
+            } else {
+                resolve({ data: null });
+            }
+        }, 500);
+    });
+};
+
 const DetaineeService = {
     createDetainee,
     getAllDetainees,
     getDetaineeById,
     updateDetaineeStatus,
+    updateDetainee,
 };
 
 export default DetaineeService;

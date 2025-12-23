@@ -14,7 +14,7 @@ const DetaineeDetailModal = ({ show, handleClose, detainee }) => {
             default: return <Badge bg="secondary">{status}</Badge>;
         }
     };
-    
+
     // Safely parse JSON fields
     const parseJsonField = (jsonString) => {
         if (!jsonString) return [];
@@ -25,7 +25,7 @@ const DetaineeDetailModal = ({ show, handleClose, detainee }) => {
             return [];
         }
     };
-    
+
     const familyContacts = parseJsonField(detainee.familyContactsJson);
 
     return (
@@ -36,7 +36,7 @@ const DetaineeDetailModal = ({ show, handleClose, detainee }) => {
             <Modal.Body>
                 <Row>
                     <Col md={3} className="text-center">
-                        <img src={detainee.photoUrl || 'https://via.placeholder.com/150'} alt="Detainee" className="detainee-photo mb-3" style={{width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', border: '3px solid #3c4b64'}} />
+                        <img src={detainee.photoUrl || 'https://via.placeholder.com/150'} alt="Detainee" className="detainee-photo mb-3" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '5px', border: '3px solid #3c4b64' }} />
                         <div className="d-grid gap-2">
                             <Button variant="outline-primary" size="sm">Modifier la photo</Button>
                             <Button variant="outline-secondary" size="sm">Imprimer le dossier</Button>
@@ -95,7 +95,7 @@ const DetaineeDetailModal = ({ show, handleClose, detainee }) => {
                                     </tbody>
                                 </Table>
                             </Tab>
-                            
+
                             <Tab eventKey="judicial" title="Judiciaire">
                                 <h6>Infractions et Peines</h6>
                                 <Table striped bordered size="sm">
@@ -140,7 +140,7 @@ const DetaineeDetailModal = ({ show, handleClose, detainee }) => {
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={handleClose}>Fermer</Button>
-                <Button variant="primary">Modifier le dossier</Button>
+                <Button variant="primary" onClick={() => { handleClose(); window.location.href = `/detenus/modifier/${detainee.id}`; }}>Modifier le dossier</Button>
             </Modal.Footer>
         </Modal>
     );

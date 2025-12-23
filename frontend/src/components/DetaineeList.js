@@ -115,8 +115,12 @@ const DetaineeList = () => {
                                     <td className="fw-bold">#{detainee.id}</td>
                                     <td>
                                         <div className="d-flex align-items-center gap-3">
-                                            <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                                                <Shield size={20} className="text-primary" />
+                                            <div className="bg-light rounded-circle overflow-hidden d-flex align-items-center justify-content-center" style={{ width: '45px', height: '45px', border: '2px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                                                {detainee.photoUrl ? (
+                                                    <img src={detainee.photoUrl} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <Shield size={20} className="text-primary" />
+                                                )}
                                             </div>
                                             <div>
                                                 <div className="fw-bold">{detainee.lastName.toUpperCase()} {detainee.firstName}</div>
@@ -131,6 +135,9 @@ const DetaineeList = () => {
                                         <div className="d-flex justify-content-center gap-2">
                                             <Button variant="light" size="sm" className="rounded-pill" onClick={() => navigate(`/detenus/${detainee.id}`)}>
                                                 <FileText size={16} className="text-primary me-1" /> Dossier
+                                            </Button>
+                                            <Button variant="light" size="sm" className="rounded-pill" onClick={() => navigate(`/detenus/modifier/${detainee.id}`)}>
+                                                <FileText size={16} className="text-secondary me-1" /> Modifier
                                             </Button>
                                         </div>
                                     </td>

@@ -5,37 +5,14 @@ const getMockUsers = () => {
     const users = localStorage.getItem(MOCK_USERS_KEY);
     if (!users) {
         const initialUsers = [
-            { id: 1, username: 'admin', email: 'admin@prison.gov', password: 'password', roles: ['ROLE_ADMIN'], status: 'ACTIVE' },
-            { id: 2, username: 'doctor', email: 'doctor@prison.gov', password: 'password', roles: ['ROLE_MEDECIN'], status: 'ACTIVE' },
-            { id: 3, username: 'personnel', email: 'staff@prison.gov', password: 'password', roles: ['ROLE_PERSONNEL'], status: 'ACTIVE' }
+            { id: 1, username: 'admin', email: 'admin@prison.gov', password: 'password', roles: ['ROLE_ADMIN'], status: 'ACTIVE', photoUrl: '' },
+            { id: 2, username: 'infirmier', email: 'infirmier@prison.gov', password: 'password', roles: ['ROLE_INFIRMIER'], status: 'ACTIVE', photoUrl: '' },
+            { id: 3, username: 'personnel', email: 'staff@prison.gov', password: 'password', roles: ['ROLE_PERSONNEL'], status: 'ACTIVE', photoUrl: '' }
         ];
         localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(initialUsers));
         return initialUsers;
     }
     return JSON.parse(users);
-};
-
-const register = (username, email, password) => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const users = getMockUsers();
-            if (users.find(u => u.username === username)) {
-                reject({ response: { data: { message: "L'utilisateur existe déjà !" } } });
-                return;
-            }
-            const newUser = {
-                id: users.length + 1,
-                username,
-                email,
-                password,
-                roles: [], // Pending assignment
-                status: 'ACTIVE'
-            };
-            users.push(newUser);
-            localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(users));
-            resolve({ data: { message: "Utilisateur enregistré avec succès !" } });
-        }, 800);
-    });
 };
 
 const login = (username, password) => {
@@ -63,11 +40,29 @@ const getCurrentUser = () => {
     return JSON.parse(localStorage.getItem('user'));
 };
 
+const updateCurrentUser = (userData) => {
+    const user = getCurrentUser();
+    if (user) {
+        const updatedUser = { ...user, ...userData };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+
+        // Also update in mock users list
+        const users = getMockUsers();
+        const index = users.findIndex(u => u.id === user.id);
+        if (index !== -1) {
+            users[index] = { ...users[index], ...userData };
+            localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(users));
+        }
+        return updatedUser;
+    }
+    return null;
+};
+
 const AuthService = {
-    register,
     login,
     logout,
     getCurrentUser,
+    updateCurrentUser,
 };
 
 export default AuthService;

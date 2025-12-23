@@ -1,16 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Form, Button, Row, Col, Tab, Tabs, Alert, ProgressBar } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { Camera, FileUp, Save, User, Shield, Heart, Fingerprint } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Camera, FileUp, Save, User, Shield, Heart, Fingerprint, Plus, XCircle } from 'lucide-react';
 import DetaineeService from '../services/detainee.service';
 import FileService from '../services/file.service';
 
-const DetaineeForm = () => {
+const DetaineeForm = ({ isEdit }) => {
     const navigate = useNavigate();
     const [message, setMessage] = useState('');
     const [successful, setSuccessful] = useState(false);
     const [photoPreview, setPhotoPreview] = useState(null);
     const [photoFile, setPhotoFile] = useState(null);
+    const { id } = useParams();
+    const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -24,11 +26,69 @@ const DetaineeForm = () => {
         medicalStatus: '', allergies: '', treatments: '', medicalHistory: '',
         distinctiveMarks: '', physicalPeculiarities: '', fingerprintsUrl: '',
         facialRecognitionUrl: '', securityLevel: '',
+        sentenceDurationMonths: '',
     });
+
+    const [familyContacts, setFamilyContacts] = useState([]);
+
+    useEffect(() => {
+        if (isEdit && id) {
+            setLoading(true);
+            DetaineeService.getDetaineeById(id)
+                .then(response => {
+                    setDetainee(response.data);
+                    if (response.data.photoUrl) setPhotoPreview(response.data.photoUrl);
+
+                    // Parse family contacts
+                    try {
+                        const contacts = JSON.parse(response.data.familyContactsJson || '[]');
+                        setFamilyContacts(contacts);
+                    } catch (e) {
+                        setFamilyContacts([]);
+                    }
+
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error("Error fetching detainee:", err);
+                    setMessage("Erreur lors du chargement du dossier.");
+                    setLoading(false);
+                });
+        }
+    }, [isEdit, id]);
+
+    const handleAddContact = () => {
+        setFamilyContacts([...familyContacts, { name: '', relation: '', phone: '' }]);
+    };
+
+    const handleRemoveContact = (index) => {
+        const newContacts = [...familyContacts];
+        newContacts.splice(index, 1);
+        setFamilyContacts(newContacts);
+    };
+
+    const handleContactChange = (index, field, value) => {
+        const newContacts = [...familyContacts];
+        newContacts[index][field] = value;
+        setFamilyContacts(newContacts);
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setDetainee({ ...detainee, [name]: value });
+        const updatedDetainee = { ...detainee, [name]: value };
+
+        // Auto-calculate expectedEndDate if arrivalDate and duration are present
+        if ((name === 'arrivalDate' || name === 'sentenceDurationMonths') && updatedDetainee.arrivalDate && updatedDetainee.sentenceDurationMonths) {
+            const arrival = new Date(updatedDetainee.arrivalDate);
+            const duration = parseInt(updatedDetainee.sentenceDurationMonths);
+            if (!isNaN(duration)) {
+                const endDate = new Date(arrival);
+                endDate.setMonth(arrival.getMonth() + duration);
+                updatedDetainee.expectedEndDate = endDate.toISOString().split('T')[0];
+            }
+        }
+
+        setDetainee(updatedDetainee);
     };
 
     const handlePhotoFileChange = (e) => {
@@ -52,11 +112,22 @@ const DetaineeForm = () => {
                 uploadedPhotoUrl = photoResponse.data.message;
             }
 
-            const detaineeDataToSubmit = { ...detainee, photoUrl: uploadedPhotoUrl };
-            await DetaineeService.createDetainee(detaineeDataToSubmit);
-            setMessage('Détenu enregistré avec succès !');
+            const detaineeDataToSubmit = {
+                ...detainee,
+                photoUrl: uploadedPhotoUrl,
+                familyContactsJson: JSON.stringify(familyContacts)
+            };
+
+            if (isEdit) {
+                await DetaineeService.updateDetainee(id, detaineeDataToSubmit);
+                setMessage('Dossier mis à jour avec succès !');
+            } else {
+                await DetaineeService.createDetainee(detaineeDataToSubmit);
+                setMessage('Détenu enregistré avec succès !');
+            }
+
             setSuccessful(true);
-            setTimeout(() => navigate('/detenus'), 2000);
+            setTimeout(() => navigate(isEdit ? `/detenus/${id}` : '/detenus'), 2000);
         } catch (error) {
             setMessage(error.response?.data?.message || 'Erreur lors de l\'enregistrement');
             setSuccessful(false);
@@ -69,8 +140,8 @@ const DetaineeForm = () => {
         <div className="animate-fade-in">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 className="fw-bold text-primary mb-1">Nouveau Dossier Détenu</h2>
-                    <p className="text-muted small">Enregistrement d'une nouvelle entrée dans l'établissement</p>
+                    <h2 className="fw-bold text-primary mb-1">{isEdit ? 'Modifier le Dossier' : 'Nouveau Dossier Détenu'}</h2>
+                    <p className="text-muted small">{isEdit ? `Modification du dossier #${id}` : "Enregistrement d'une nouvelle entrée dans l'établissement"}</p>
                 </div>
             </div>
 
@@ -138,6 +209,68 @@ const DetaineeForm = () => {
                                             <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold">Lieu de Naissance</Form.Label><Form.Control name="birthPlace" value={detainee.birthPlace} onChange={handleChange} className="border-0 bg-light rounded-3" /></Form.Group></Col>
                                         </Row>
                                         <Form.Group className="mb-3"><Form.Label className="small fw-bold">Adresse de Résidence</Form.Label><Form.Control as="textarea" rows={2} name="address" value={detainee.address} onChange={handleChange} className="border-0 bg-light rounded-3" /></Form.Group>
+
+                                        <div className="mt-4">
+                                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 className="fw-bold mb-0">Contacts d'Urgence / Famille</h6>
+                                                <Button variant="outline-primary" size="sm" onClick={handleAddContact}>
+                                                    <Plus size={14} className="me-1" /> Ajouter un contact
+                                                </Button>
+                                            </div>
+
+                                            {familyContacts.length === 0 ? (
+                                                <div className="text-center p-3 bg-light rounded-3 text-muted small">
+                                                    Aucun contact ajouté.
+                                                </div>
+                                            ) : (
+                                                familyContacts.map((contact, index) => (
+                                                    <div key={index} className="p-3 bg-light rounded-3 mb-3 position-relative">
+                                                        <Button
+                                                            variant="link"
+                                                            className="position-absolute top-0 end-0 text-danger p-2"
+                                                            onClick={() => handleRemoveContact(index)}
+                                                        >
+                                                            <XCircle size={16} />
+                                                        </Button>
+                                                        <Row>
+                                                            <Col md={4}>
+                                                                <Form.Group className="mb-2">
+                                                                    <Form.Label className="small fw-bold">Nom complet</Form.Label>
+                                                                    <Form.Control
+                                                                        size="sm"
+                                                                        value={contact.name}
+                                                                        onChange={(e) => handleContactChange(index, 'name', e.target.value)}
+                                                                        className="border-0"
+                                                                    />
+                                                                </Form.Group>
+                                                            </Col>
+                                                            <Col md={4}>
+                                                                <Form.Group className="mb-2">
+                                                                    <Form.Label className="small fw-bold">Lien de parenté</Form.Label>
+                                                                    <Form.Control
+                                                                        size="sm"
+                                                                        value={contact.relation}
+                                                                        onChange={(e) => handleContactChange(index, 'relation', e.target.value)}
+                                                                        className="border-0"
+                                                                    />
+                                                                </Form.Group>
+                                                            </Col>
+                                                            <Col md={4}>
+                                                                <Form.Group className="mb-2">
+                                                                    <Form.Label className="small fw-bold">Téléphone</Form.Label>
+                                                                    <Form.Control
+                                                                        size="sm"
+                                                                        value={contact.phone}
+                                                                        onChange={(e) => handleContactChange(index, 'phone', e.target.value)}
+                                                                        className="border-0"
+                                                                    />
+                                                                </Form.Group>
+                                                            </Col>
+                                                        </Row>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
                                 </Tab>
                                 <Tab eventKey="judicial" title={<><Shield size={16} className="me-2" />Judiciaire</>}>
@@ -146,6 +279,21 @@ const DetaineeForm = () => {
                                         <Row>
                                             <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold">Date d'Arrivée</Form.Label><Form.Control type="date" name="arrivalDate" value={detainee.arrivalDate} onChange={handleChange} required className="border-0 bg-light rounded-3" /></Form.Group></Col>
                                             <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold">Tribunal</Form.Label><Form.Control name="court" value={detainee.court} onChange={handleChange} className="border-0 bg-light rounded-3" /></Form.Group></Col>
+                                        </Row>
+                                        <Row>
+                                            <Col md={6}>
+                                                <Form.Group className="mb-3">
+                                                    <Form.Label className="small fw-bold">Durée de la peine (mois)</Form.Label>
+                                                    <Form.Control type="number" name="sentenceDurationMonths" value={detainee.sentenceDurationMonths} onChange={handleChange} placeholder="Ex: 24" className="border-0 bg-light rounded-3" />
+                                                </Form.Group>
+                                            </Col>
+                                            <Col md={6}>
+                                                <Form.Group className="mb-3">
+                                                    <Form.Label className="small fw-bold">Date de Libération Prévue</Form.Label>
+                                                    <Form.Control type="date" name="expectedEndDate" value={detainee.expectedEndDate} onChange={handleChange} className="border-0 bg-light rounded-3" />
+                                                    <Form.Text className="text-muted small">Calculée automatiquement si la durée est saisie.</Form.Text>
+                                                </Form.Group>
+                                            </Col>
                                         </Row>
                                     </div>
                                 </Tab>
@@ -171,8 +319,8 @@ const DetaineeForm = () => {
                         </div>
                         <div className="d-flex justify-content-end gap-3">
                             <Button variant="light" className="px-4 rounded-pill" onClick={() => navigate(-1)}>Annuler</Button>
-                            <Button type="submit" className="btn-premium btn-premium-primary px-5" disabled={uploading}>
-                                <Save size={18} /> Enregistrer le Dossier
+                            <Button type="submit" className="btn-premium btn-premium-primary px-5" disabled={uploading || loading}>
+                                <Save size={18} /> {isEdit ? 'Mettre à jour' : 'Enregistrer le Dossier'}
                             </Button>
                         </div>
                     </Col>

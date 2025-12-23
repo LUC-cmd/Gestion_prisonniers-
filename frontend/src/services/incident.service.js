@@ -30,9 +30,20 @@ const createIncident = (incidentData) => {
     });
 };
 
+const getIncidentsByDetaineeId = (detaineeId) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const incidents = getMockIncidents();
+            const filtered = incidents.filter(inc => inc.detainee && parseInt(inc.detainee.id) === parseInt(detaineeId));
+            resolve({ data: filtered });
+        }, 300);
+    });
+};
+
 const IncidentService = {
     getAllIncidents,
     createIncident,
+    getIncidentsByDetaineeId,
 };
 
 export default IncidentService;

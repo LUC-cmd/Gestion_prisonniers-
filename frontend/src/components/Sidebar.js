@@ -17,11 +17,11 @@ const Sidebar = ({ roles }) => {
 
     const menuItems = [
         { path: '/admin-dashboard', icon: <LayoutDashboard size={20} />, label: 'Tableau de bord', roles: ['ROLE_ADMIN'] },
-        { path: '/doctor-dashboard', icon: <Stethoscope size={20} />, label: 'Espace Médical', roles: ['ROLE_MEDECIN'] },
+        { path: '/doctor-dashboard', icon: <Stethoscope size={20} />, label: 'Espace Médical', roles: ['ROLE_INFIRMIER'] },
         { path: '/personnel-dashboard', icon: <Users size={20} />, label: 'Espace Personnel', roles: ['ROLE_PERSONNEL'] },
         { path: '/detenus', icon: <UserSquare2 size={20} />, label: 'Dossiers Détenus', roles: ['ROLE_ADMIN', 'ROLE_PERSONNEL'] },
         { path: '/incidents', icon: <ShieldAlert size={20} />, label: 'Incidents', roles: ['ROLE_ADMIN', 'ROLE_PERSONNEL'] },
-        { path: '/planning', icon: <Calendar size={20} />, label: 'Planning', roles: ['ROLE_ADMIN', 'ROLE_PERSONNEL', 'ROLE_MEDECIN'] },
+        { path: '/planning', icon: <Calendar size={20} />, label: 'Planning', roles: ['ROLE_ADMIN', 'ROLE_PERSONNEL', 'ROLE_INFIRMIER'] },
     ];
 
     return (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Table, Badge, Button, Form, InputGroup } from 'react-bootstrap';
-import { Search, Filter, AlertTriangle, Clock, MapPin, Eye, FileText } from 'lucide-react';
+import { Search, Filter, AlertTriangle, Clock, MapPin, Eye, FileText, XCircle } from 'lucide-react';
+import { Modal } from 'react-bootstrap';
 import IncidentService from '../services/incident.service';
 
 const IncidentList = () => {
@@ -8,6 +9,9 @@ const IncidentList = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterGravity, setFilterGravity] = useState('Tous');
+    const [selectedIncident, setSelectedIncident] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     useEffect(() => {
         fetchIncidents();
@@ -34,9 +38,13 @@ const IncidentList = () => {
     };
 
     const filteredIncidents = incidents.filter(incident => {
-        const matchesSearch = incident.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            incident.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            incident.type.toLowerCase().includes(searchTerm.toLowerCase());
+        const description = incident.description || '';
+        const location = incident.location || '';
+        const type = incident.type || '';
+
+        const matchesSearch = description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            type.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesGravity = filterGravity === 'Tous' || incident.gravity === filterGravity;
         return matchesSearch && matchesGravity;
     });
@@ -48,7 +56,7 @@ const IncidentList = () => {
                     <h2 className="fw-bold text-primary mb-1">Registre des Incidents</h2>
                     <p className="text-muted small">Suivi et gestion des événements signalés dans l'établissement</p>
                 </div>
-                <Button className="btn-premium btn-premium-primary">
+                <Button className="btn-premium btn-premium-primary" onClick={() => window.location.href = '/incidents/nouveau'}>
                     <AlertTriangle size={18} /> Signaler un nouvel incident
                 </Button>
             </div>
@@ -111,7 +119,7 @@ const IncidentList = () => {
                                     <td>
                                         <div className="d-flex align-items-center gap-2">
                                             <Clock size={14} className="text-muted" />
-                                            {new Date(incident.date).toLocaleString('fr-FR')}
+                                            {incident.date ? new Date(incident.date).toLocaleString('fr-FR') : 'Date inconnue'}
                                         </div>
                                     </td>
                                     <td>
@@ -123,7 +131,7 @@ const IncidentList = () => {
                                     <td>
                                         {incident.detainee ? (
                                             <div className="fw-bold text-primary">
-                                                {incident.detainee.lastName.toUpperCase()} {incident.detainee.firstName}
+                                                {incident.detainee.lastName ? incident.detainee.lastName.toUpperCase() : 'N/A'} {incident.detainee.firstName || ''}
                                                 <div className="small text-muted fw-normal">ID: {incident.detainee.id}</div>
                                             </div>
                                         ) : (
@@ -137,10 +145,20 @@ const IncidentList = () => {
                                     </td>
                                     <td className="text-center">
                                         <div className="d-flex justify-content-center gap-2">
-                                            <Button variant="light" size="sm" className="rounded-circle p-2">
+                                            <Button
+                                                variant="light"
+                                                size="sm"
+                                                className="rounded-circle p-2"
+                                                onClick={() => { setSelectedIncident(incident); setShowDetailModal(true); }}
+                                            >
                                                 <Eye size={16} className="text-primary" />
                                             </Button>
-                                            <Button variant="light" size="sm" className="rounded-circle p-2">
+                                            <Button
+                                                variant="light"
+                                                size="sm"
+                                                className="rounded-circle p-2"
+                                                onClick={() => { setSelectedIncident(incident); setShowReportModal(true); }}
+                                            >
                                                 <FileText size={16} className="text-secondary" />
                                             </Button>
                                         </div>
@@ -153,6 +171,68 @@ const IncidentList = () => {
                     </tbody>
                 </Table>
             </div>
+
+            {/* Incident Detail Modal */}
+            <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered size="lg">
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Détails de l'Incident</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedIncident && (
+                        <Row>
+                            <Col md={12} className="mb-4">
+                                <div className="p-3 bg-light rounded-3">
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 className="fw-bold mb-0">{selectedIncident.type}</h5>
+                                        {getGravityBadge(selectedIncident.gravity)}
+                                    </div>
+                                    <div className="text-muted small">
+                                        <Clock size={14} className="me-1" /> {new Date(selectedIncident.date).toLocaleString('fr-FR')}
+                                        <MapPin size={14} className="ms-3 me-1" /> {selectedIncident.location}
+                                    </div>
+                                </div>
+                            </Col>
+                            <Col md={6} className="mb-4">
+                                <h6 className="fw-bold">Détenu impliqué</h6>
+                                <div className="p-3 border rounded-3">
+                                    {selectedIncident.detainee ? (
+                                        <>
+                                            <div className="fw-bold">{selectedIncident.detainee.lastName?.toUpperCase()} {selectedIncident.detainee.firstName}</div>
+                                            <div className="small text-muted">ID: {selectedIncident.detainee.id}</div>
+                                        </>
+                                    ) : "Non spécifié"}
+                                </div>
+                            </Col>
+                            <Col md={12}>
+                                <h6 className="fw-bold">Description des faits</h6>
+                                <div className="p-3 border rounded-3 bg-white">
+                                    {selectedIncident.description}
+                                </div>
+                            </Col>
+                        </Row>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="border-0">
+                    <Button variant="light" onClick={() => setShowDetailModal(false)}>Fermer</Button>
+                    <Button variant="primary" onClick={() => window.print()}>Imprimer le rapport</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Report Generation Modal (Mock) */}
+            <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Générer un rapport PDF</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="text-center py-4">
+                    <FileText size={48} className="text-primary mb-3" />
+                    <p>Voulez-vous générer le rapport officiel pour cet incident ?</p>
+                    <div className="small text-muted">Le document inclura les détails de l'incident, les personnes impliquées et les signatures requises.</div>
+                </Modal.Body>
+                <Modal.Footer className="border-0">
+                    <Button variant="light" onClick={() => setShowReportModal(false)}>Annuler</Button>
+                    <Button variant="primary" onClick={() => { setShowReportModal(false); alert('Rapport généré avec succès !'); }}>Générer le PDF</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };

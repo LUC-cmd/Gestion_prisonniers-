@@ -5,7 +5,6 @@ import './App.css';
 import './styles/premium.css';
 
 import Login from './components/Login';
-import Register from './components/Register';
 import DetaineeForm from './components/DetaineeForm';
 import AdminDashboard from './components/AdminDashboard';
 import DoctorDashboard from './components/DoctorDashboard';
@@ -34,7 +33,7 @@ const DashboardRedirector = () => {
     }
     const roles = currentUser.roles || [];
     if (roles.includes("ROLE_ADMIN")) navigate('/admin-dashboard');
-    else if (roles.includes("ROLE_MEDECIN")) navigate('/doctor-dashboard');
+    else if (roles.includes("ROLE_INFIRMIER")) navigate('/doctor-dashboard');
     else if (roles.includes("ROLE_PERSONNEL")) navigate('/personnel-dashboard');
     else if (roles.length === 0) navigate('/pending-role-assignment');
     else navigate('/unauthorized');
@@ -91,7 +90,6 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
-        <Route path="/register" element={<Register />} />
 
         <Route path="/" element={
           currentUser ? (
@@ -110,7 +108,7 @@ function App() {
         } />
 
         <Route path="/doctor-dashboard" element={
-          hasRole("ROLE_MEDECIN") ? (
+          hasRole("ROLE_INFIRMIER") ? (
             <MainLayout user={currentUser} onLogout={logOut}>
               <DoctorDashboard />
             </MainLayout>
@@ -141,8 +139,16 @@ function App() {
           ) : <UnauthorizedPage />
         } />
 
+        <Route path="/detenus/modifier/:id" element={
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL")) ? (
+            <MainLayout user={currentUser} onLogout={logOut}>
+              <DetaineeForm isEdit={true} />
+            </MainLayout>
+          ) : <UnauthorizedPage />
+        } />
+
         <Route path="/detenus/:id" element={
-          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL") || hasRole("ROLE_MEDECIN")) ? (
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL") || hasRole("ROLE_INFIRMIER")) ? (
             <MainLayout user={currentUser} onLogout={logOut}>
               <DetaineeFile />
             </MainLayout>
@@ -166,7 +172,7 @@ function App() {
         } />
 
         <Route path="/planning" element={
-          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL") || hasRole("ROLE_MEDECIN")) ? (
+          (hasRole("ROLE_ADMIN") || hasRole("ROLE_PERSONNEL") || hasRole("ROLE_INFIRMIER")) ? (
             <MainLayout user={currentUser} onLogout={logOut}>
               <Planning />
             </MainLayout>

@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Tabs, Tab, Badge, Button, Table } from 'react-bootstrap';
-import { User, Shield, Heart, Fingerprint, Printer, Edit, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Row, Col, Tabs, Tab, Badge, Button, Table, Modal, Form } from 'react-bootstrap';
+import { User, Shield, Heart, Fingerprint, Printer, Edit, ArrowLeft, AlertTriangle, Camera, Trash2, Plus } from 'lucide-react';
+import AuthService from '../services/auth.service';
 import DetaineeService from '../services/detainee.service';
+import IncidentService from '../services/incident.service';
 
 const DetaineeFile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [detainee, setDetainee] = useState(null);
+    const [incidents, setIncidents] = useState([]);
+    const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [newPhotoUrl, setNewPhotoUrl] = useState('');
+    const [photoType, setPhotoType] = useState('Face');
+
+    const currentUser = AuthService.getCurrentUser();
+    const isAdmin = currentUser?.roles?.includes('ROLE_ADMIN');
+    const canManage = isAdmin || currentUser?.roles?.includes('ROLE_PERSONNEL');
 
     useEffect(() => {
         if (id) {
@@ -19,13 +30,55 @@ const DetaineeFile = () => {
 
     const fetchDetainee = async (detaineeId) => {
         try {
-            const response = await DetaineeService.getDetaineeById(detaineeId);
-            setDetainee(response.data);
+            const [detaineeRes, incidentsRes] = await Promise.all([
+                DetaineeService.getDetaineeById(detaineeId),
+                IncidentService.getIncidentsByDetaineeId(detaineeId)
+            ]);
+            setDetainee(detaineeRes.data);
+            setIncidents(incidentsRes.data);
+
+            // Parse photos
+            try {
+                const photoData = JSON.parse(detaineeRes.data.photosJson || '[]');
+                setPhotos(photoData);
+            } catch (e) {
+                setPhotos([]);
+            }
         } catch (err) {
             setError('Impossible de charger le dossier du détenu.');
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddPhoto = async () => {
+        if (!newPhotoUrl) return;
+        const newPhoto = {
+            id: Date.now(),
+            url: newPhotoUrl,
+            type: photoType,
+            date: new Date().toISOString()
+        };
+        const updatedPhotos = [...photos, newPhoto];
+        try {
+            await DetaineeService.updateDetainee(id, { photosJson: JSON.stringify(updatedPhotos) });
+            setPhotos(updatedPhotos);
+            setShowPhotoModal(false);
+            setNewPhotoUrl('');
+        } catch (err) {
+            alert("Erreur lors de l'ajout de la photo");
+        }
+    };
+
+    const handleDeletePhoto = async (photoId) => {
+        if (!window.confirm("Supprimer cette photo ?")) return;
+        const updatedPhotos = photos.filter(p => p.id !== photoId);
+        try {
+            await DetaineeService.updateDetainee(id, { photosJson: JSON.stringify(updatedPhotos) });
+            setPhotos(updatedPhotos);
+        } catch (err) {
+            alert("Erreur lors de la suppression");
         }
     };
 
@@ -63,11 +116,11 @@ const DetaineeFile = () => {
                         <p className="text-muted small">Consultation détaillée du dossier pénitentiaire</p>
                     </div>
                 </div>
-                <div className="d-flex gap-2">
-                    <Button variant="light" className="rounded-pill shadow-sm">
+                <div className="d-flex gap-2 no-print">
+                    <Button variant="light" className="rounded-pill shadow-sm" onClick={() => window.print()}>
                         <Printer size={18} className="me-2" /> Imprimer
                     </Button>
-                    <Button className="btn-premium btn-premium-primary">
+                    <Button className="btn-premium btn-premium-primary" onClick={() => navigate(`/detenus/modifier/${detainee.id}`)}>
                         <Edit size={18} /> Modifier le dossier
                     </Button>
                 </div>
@@ -263,6 +316,99 @@ const DetaineeFile = () => {
                                     </Row>
                                 </div>
                             </Tab>
+
+                            <Tab eventKey="incidents" title={<><AlertTriangle size={16} className="me-2" />Incidents</>}>
+                                <div className="p-4">
+                                    <h6 className="text-primary fw-bold mb-3">Historique des Incidents</h6>
+                                    {incidents.length > 0 ? (
+                                        <Table responsive className="custom-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Type</th>
+                                                    <th>Gravité</th>
+                                                    <th>Lieu</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {incidents.map((inc, i) => (
+                                                    <tr key={i}>
+                                                        <td>{new Date(inc.date).toLocaleDateString('fr-FR')}</td>
+                                                        <td className="fw-bold">{inc.type}</td>
+                                                        <td>
+                                                            <Badge className={`badge-custom ${inc.gravity === 'Élevée' ? 'badge-danger' : inc.gravity === 'Moyenne' ? 'badge-warning' : 'badge-success'}`}>
+                                                                {inc.gravity}
+                                                            </Badge>
+                                                        </td>
+                                                        <td>{inc.location}</td>
+                                                        <td><div className="text-truncate" style={{ maxWidth: '200px' }}>{inc.description}</div></td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-4 text-muted">Aucun incident signalé pour ce détenu.</div>
+                                    )}
+                                    <div className="mt-3">
+                                        <Button variant="outline-danger" size="sm" onClick={() => navigate('/incidents/nouveau')}>
+                                            <AlertTriangle size={14} className="me-1" /> Signaler un incident
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Tab>
+
+                            <Tab eventKey="photos" title={<><Camera size={16} className="me-2" />Session Photo</>}>
+                                <div className="p-4">
+                                    <div className="d-flex justify-content-between align-items-center mb-4">
+                                        <h6 className="text-primary fw-bold mb-0">Galerie de Photos du Détenu</h6>
+                                        {canManage && (
+                                            <Button variant="primary" size="sm" className="rounded-pill" onClick={() => setShowPhotoModal(true)}>
+                                                <Plus size={14} className="me-1" /> Ajouter une photo
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <Row>
+                                        <Col md={4} className="mb-4">
+                                            <div className="glass-card p-2 overflow-hidden position-relative">
+                                                <img
+                                                    src={detainee.photoUrl || 'https://via.placeholder.com/300'}
+                                                    alt="Vue de face"
+                                                    className="rounded-3 w-100 shadow-sm"
+                                                    style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                                                />
+                                                <div className="p-2 text-center small fw-bold">Photo de Profil (Principale)</div>
+                                            </div>
+                                        </Col>
+
+                                        {photos.map(photo => (
+                                            <Col md={4} key={photo.id} className="mb-4">
+                                                <div className="glass-card p-2 overflow-hidden position-relative">
+                                                    <img
+                                                        src={photo.url}
+                                                        alt={photo.type}
+                                                        className="rounded-3 w-100 shadow-sm"
+                                                        style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                                                    />
+                                                    <div className="p-2 text-center small fw-bold">
+                                                        {photo.type} - {new Date(photo.date).toLocaleDateString()}
+                                                    </div>
+                                                    {isAdmin && (
+                                                        <Button
+                                                            variant="danger"
+                                                            size="sm"
+                                                            className="position-absolute top-0 end-0 m-3 rounded-circle p-1 opacity-75 hover-opacity-100"
+                                                            onClick={() => handleDeletePhoto(photo.id)}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </Col>
+                                        ))}
+                                    </Row>
+                                </div>
+                            </Tab>
                         </Tabs>
                     </div>
 
@@ -280,6 +426,44 @@ const DetaineeFile = () => {
                     </div>
                 </Col>
             </Row>
+
+            <Modal show={showPhotoModal} onHide={() => setShowPhotoModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Ajouter une photo</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">URL de la photo</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="https://..."
+                                value={newPhotoUrl}
+                                onChange={(e) => setNewPhotoUrl(e.target.value)}
+                                className="border-0 bg-light rounded-3"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Type de vue</Form.Label>
+                            <Form.Select
+                                value={photoType}
+                                onChange={(e) => setPhotoType(e.target.value)}
+                                className="border-0 bg-light rounded-3"
+                            >
+                                <option value="Face">Face</option>
+                                <option value="Profil Gauche">Profil Gauche</option>
+                                <option value="Profil Droit">Profil Droit</option>
+                                <option value="Signe Distinctif">Signe Distinctif</option>
+                                <option value="Autre">Autre</option>
+                            </Form.Select>
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer className="border-0">
+                    <Button variant="light" onClick={() => setShowPhotoModal(false)}>Annuler</Button>
+                    <Button variant="primary" onClick={handleAddPhoto}>Ajouter à la session</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };
